@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-birthday_app}
+      POSTGRES_USER: ${POSTGRES_USER:-birthday_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-birthday_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "until pg_isready -h $$POSTGRES_HOST -p $$POSTGRES_PORT -U $$POSTGRES_USER; do sleep 1; done;
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "until pg_isready -h $$POSTGRES_HOST -p $$POSTGRES_PORT -U $$POSTGRES_USER; do sleep 1; done;
+      celery -A config worker -l info"
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      web:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "until pg_isready -h $$POSTGRES_HOST -p $$POSTGRES_PORT -U $$POSTGRES_USER; do sleep 1; done;
+      rm -f /tmp/celerybeat-schedule* &&
+      celery -A config beat -l info --schedule /tmp/celerybeat-schedule"
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      web:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

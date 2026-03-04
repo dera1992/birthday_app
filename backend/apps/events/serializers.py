@@ -1,0 +1,6 @@
+from apps.events.read_serializers import BirthdayEventReadSerializer, EventApplicationReadSerializer
+from apps.events.write_serializers import BirthdayEventWriteSerializer, EventApplicationWriteSerializer, PointFieldSerializer
+
+
+BirthdayEventSerializer = BirthdayEventReadSerializer
+EventApplicationSerializer = EventApplicationReadSerializer

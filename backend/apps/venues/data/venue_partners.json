@@ -1,0 +1,6 @@
+[
+  {"name": "Northern Quarter Dining House", "city": "Manchester", "category": "DINING", "approx_area_label": "Northern Quarter", "referral_url": "https://example.com/manchester-dining-1"},
+  {"name": "Spinningfields Cocktail Lounge", "city": "Manchester", "category": "NIGHTLIFE", "approx_area_label": "Spinningfields", "referral_url": "https://example.com/manchester-nightlife-1"},
+  {"name": "Shoreditch Rooftop Social", "city": "London", "category": "NIGHTLIFE", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-nightlife-1"},
+  {"name": "Covent Garden Birthday Brunch", "city": "London", "category": "DINING", "approx_area_label": "Covent Garden", "referral_url": "https://example.com/london-dining-1"}
+]

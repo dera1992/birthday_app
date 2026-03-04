@@ -1,0 +1,2069 @@
+openapi: 3.0.3
+info:
+  title: Birthday Experiences + Support Ecosystem API
+  version: 1.0.0
+  description: Backend API for birthday profiles, curated events, payments, venues,
+    and safety flows.
+paths:
+  /api/auth/login:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/refresh:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/register:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/auth/request-otp:
+    post:
+      operationId: auth_request_otp_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestOTPRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RequestOTPRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RequestOTPRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestOTPResponse'
+          description: ''
+  /api/auth/verify-email:
+    post:
+      operationId: auth_verify_email_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailResponse'
+          description: ''
+  /api/auth/verify-otp:
+    post:
+      operationId: auth_verify_otp_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyOTPResponse'
+          description: ''
+  /api/birthday-profile:
+    post:
+      operationId: birthday_profile_create
+      tags:
+      - birthday-profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayProfileWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BirthdayProfileWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BirthdayProfileWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayProfileRead'
+          description: ''
+  /api/birthday-profile/{slug}:
+    get:
+      operationId: birthday_profile_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - birthday-profile
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayProfileRead'
+          description: ''
+    patch:
+      operationId: birthday_profile_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - birthday-profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBirthdayProfileWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBirthdayProfileWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBirthdayProfileWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayProfileRead'
+          description: ''
+  /api/birthday-profile/{slug}/contributions/create-intent:
+    post:
+      operationId: birthday_profile_contributions_create_intent_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - birthday-profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportContributionWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupportContributionWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupportContributionWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportContributionIntentResponse'
+          description: ''
+  /api/birthday-profile/{slug}/messages:
+    get:
+      operationId: birthday_profile_messages_list
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - birthday-profile
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportMessageRead'
+          description: ''
+    post:
+      operationId: birthday_profile_messages_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - birthday-profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportMessageWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupportMessageWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupportMessageWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportMessageRead'
+          description: ''
+  /api/birthday-profile/{slug}/wishlist-items:
+    post:
+      operationId: birthday_profile_wishlist_items_create
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - birthday-profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WishlistItemWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WishlistItemWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WishlistItemWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistItemRead'
+          description: ''
+  /api/blocks:
+    post:
+      operationId: blocks_create
+      tags:
+      - blocks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBlockRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserBlockRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserBlockRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBlock'
+          description: ''
+  /api/connect/onboard:
+    post:
+      operationId: connect_onboard_create
+      tags:
+      - connect
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectOnboardResponse'
+          description: ''
+  /api/connect/status:
+    get:
+      operationId: connect_status_retrieve
+      tags:
+      - connect
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectStatusResponse'
+          description: ''
+  /api/events:
+    post:
+      operationId: events_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthdayEventWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BirthdayEventWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BirthdayEventWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/{event_id}:
+    get:
+      operationId: events_retrieve
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+    patch:
+      operationId: events_partial_update
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBirthdayEventWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBirthdayEventWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBirthdayEventWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/{event_id}/applications/{app_id}/approve:
+    post:
+      operationId: events_applications_approve_create
+      parameters:
+      - in: path
+        name: app_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventApplicationRead'
+          description: ''
+  /api/events/{event_id}/applications/{app_id}/decline:
+    post:
+      operationId: events_applications_decline_create
+      parameters:
+      - in: path
+        name: app_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventApplicationRead'
+          description: ''
+  /api/events/{event_id}/apply:
+    post:
+      operationId: events_apply_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventApplyRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventApplyRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventApplyRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventApplicationRead'
+          description: ''
+  /api/events/{event_id}/cancel:
+    post:
+      operationId: events_cancel_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/{event_id}/lock:
+    post:
+      operationId: events_lock_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/{event_id}/payment/create-intent:
+    post:
+      operationId: events_payment_create_intent_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateEventPaymentIntentResponse'
+          description: ''
+  /api/events/{event_id}/payment/request-refund:
+    post:
+      operationId: events_payment_request_refund_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestRefundResponse'
+          description: ''
+  /api/events/{event_id}/publish:
+    post:
+      operationId: events_publish_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/{event_id}/ratings:
+    post:
+      operationId: events_ratings_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRatingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventRatingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventRatingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventRating'
+          description: ''
+  /api/events/{event_id}/toggle-expand:
+    post:
+      operationId: events_toggle_expand_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/{event_id}/venue/confirm:
+    post:
+      operationId: events_venue_confirm_create
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventVenueConfirmRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventVenueConfirmRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventVenueConfirmRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/events/feed:
+    get:
+      operationId: events_feed_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: lat
+        schema:
+          type: number
+          format: double
+        required: true
+      - in: query
+        name: lng
+        schema:
+          type: number
+          format: double
+        required: true
+      - in: query
+        name: radius
+        schema:
+          type: number
+          format: double
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BirthdayEventRead'
+          description: ''
+  /api/me:
+    get:
+      operationId: me_retrieve
+      tags:
+      - me
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+    patch:
+      operationId: me_partial_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMeRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/reports:
+    post:
+      operationId: reports_create
+      tags:
+      - reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserReportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserReport'
+          description: ''
+  /api/venues/{venue_id}/click:
+    post:
+      operationId: venues_click_create
+      parameters:
+      - in: path
+        name: venue_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - venues
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueClickResponse'
+          description: ''
+  /api/venues/recommendations:
+    get:
+      operationId: venues_recommendations_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: city
+        schema:
+          type: string
+      tags:
+      - venues
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VenuePartner'
+          description: ''
+  /api/webhooks/stripe:
+    post:
+      operationId: webhooks_stripe_create
+      tags:
+      - webhooks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StripeWebhookResponse'
+          description: ''
+  /api/wishlist-items/{id}:
+    patch:
+      operationId: wishlist_items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wishlist-items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWishlistItemWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWishlistItemWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWishlistItemWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistItemRead'
+          description: ''
+  /api/wishlist-items/{id}/reserve:
+    post:
+      operationId: wishlist_items_reserve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wishlist-items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WishlistReservationWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WishlistReservationWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WishlistReservationWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishlistReservationRead'
+          description: ''
+components:
+  schemas:
+    BirthdayEventRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        host:
+          type: integer
+        payee_user:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        agenda:
+          type: string
+        category:
+          type: string
+          maxLength: 64
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+        visibility:
+          $ref: '#/components/schemas/VisibilityEc4Enum'
+        expand_to_strangers:
+          type: boolean
+        location_point:
+          $ref: '#/components/schemas/PointValue'
+        radius_meters:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        approx_area_label:
+          type: string
+          maxLength: 255
+        min_guests:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        max_guests:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        criteria: {}
+        payment_mode:
+          $ref: '#/components/schemas/PaymentModeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 8
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        venue_status:
+          $ref: '#/components/schemas/VenueStatusEnum'
+        venue_name:
+          type: string
+          maxLength: 255
+        lock_deadline_at:
+          type: string
+          format: date-time
+        approved_count:
+          type: integer
+          readOnly: true
+        distance_meters:
+          type: number
+          format: double
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - approved_count
+      - approx_area_label
+      - category
+      - created_at
+      - distance_meters
+      - end_at
+      - host
+      - id
+      - location_point
+      - lock_deadline_at
+      - start_at
+      - title
+      - updated_at
+    BirthdayEventWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        agenda:
+          type: string
+        category:
+          type: string
+          minLength: 1
+          maxLength: 64
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+        visibility:
+          $ref: '#/components/schemas/VisibilityEc4Enum'
+        expand_to_strangers:
+          type: boolean
+        location_point:
+          $ref: '#/components/schemas/PointValueRequest'
+        radius_meters:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        approx_area_label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        min_guests:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        max_guests:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        criteria: {}
+        payment_mode:
+          $ref: '#/components/schemas/PaymentModeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 8
+        lock_deadline_at:
+          type: string
+          format: date-time
+      required:
+      - approx_area_label
+      - category
+      - end_at
+      - location_point
+      - lock_deadline_at
+      - start_at
+      - title
+    BirthdayProfileRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        day:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        hide_year:
+          type: boolean
+        bio:
+          type: string
+        preferences: {}
+        visibility:
+          $ref: '#/components/schemas/VisibilityC36Enum'
+        wishlist_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishlistItemRead'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - day
+      - id
+      - month
+      - slug
+      - updated_at
+      - wishlist_items
+    BirthdayProfileWriteRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        day:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        hide_year:
+          type: boolean
+        bio:
+          type: string
+        preferences: {}
+        visibility:
+          $ref: '#/components/schemas/VisibilityC36Enum'
+      required:
+      - day
+      - month
+      - slug
+    ConnectOnboardResponse:
+      type: object
+      properties:
+        onboarding_url:
+          type: string
+          format: uri
+        connect_account:
+          $ref: '#/components/schemas/ConnectStatus'
+      required:
+      - connect_account
+      - onboarding_url
+    ConnectStatus:
+      type: object
+      properties:
+        account_type:
+          type: string
+          readOnly: true
+        stripe_account_id:
+          type: string
+          maxLength: 255
+        charges_enabled:
+          type: boolean
+        payouts_enabled:
+          type: boolean
+        details_submitted:
+          type: boolean
+        requirements: {}
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - account_type
+      - stripe_account_id
+      - updated_at
+    ConnectStatusResponse:
+      type: object
+      properties:
+        has_account:
+          type: boolean
+        connect_account:
+          allOf:
+          - $ref: '#/components/schemas/ConnectStatus'
+          nullable: true
+      required:
+      - has_account
+    CreateEventPaymentIntentResponse:
+      type: object
+      properties:
+        payment_id:
+          type: integer
+        stripe_payment_intent_id:
+          type: string
+        client_secret:
+          type: string
+          nullable: true
+        status:
+          type: string
+      required:
+      - client_secret
+      - payment_id
+      - status
+      - stripe_payment_intent_id
+    EventApplicationRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          type: integer
+        applicant:
+          type: integer
+        intro_message:
+          type: string
+        invite_code_used:
+          type: string
+          maxLength: 64
+        status:
+          $ref: '#/components/schemas/EventApplicationReadStatusEnum'
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - applicant
+      - created_at
+      - event
+      - id
+    EventApplicationReadStatusEnum:
+      enum:
+      - PENDING
+      - APPROVED
+      - DECLINED
+      - WITHDRAWN
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `APPROVED` - Approved
+        * `DECLINED` - Declined
+        * `WITHDRAWN` - Withdrawn
+    EventApplyRequestRequest:
+      type: object
+      properties:
+        intro_message:
+          type: string
+          minLength: 1
+        invite_code:
+          type: string
+          minLength: 1
+    EventRating:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        review:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - rating
+    EventRatingRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        review:
+          type: string
+      required:
+      - rating
+    EventVenueConfirmRequestRequest:
+      type: object
+      properties:
+        venue_name:
+          type: string
+          minLength: 1
+    Me:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        verification:
+          allOf:
+          - $ref: '#/components/schemas/UserVerification'
+          readOnly: true
+      required:
+      - id
+      - username
+      - verification
+    ModerationStatusEnum:
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `APPROVED` - Approved
+        * `REJECTED` - Rejected
+    PatchedBirthdayEventWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        agenda:
+          type: string
+        category:
+          type: string
+          minLength: 1
+          maxLength: 64
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+        visibility:
+          $ref: '#/components/schemas/VisibilityEc4Enum'
+        expand_to_strangers:
+          type: boolean
+        location_point:
+          $ref: '#/components/schemas/PointValueRequest'
+        radius_meters:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        approx_area_label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        min_guests:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        max_guests:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        criteria: {}
+        payment_mode:
+          $ref: '#/components/schemas/PaymentModeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 8
+        lock_deadline_at:
+          type: string
+          format: date-time
+    PatchedBirthdayProfileWriteRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        day:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        hide_year:
+          type: boolean
+        bio:
+          type: string
+        preferences: {}
+        visibility:
+          $ref: '#/components/schemas/VisibilityC36Enum'
+    PatchedMeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        phone_number:
+          type: string
+          writeOnly: true
+    PatchedWishlistItemWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        external_url:
+          type: string
+          format: uri
+          maxLength: 200
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 8
+    PaymentModeEnum:
+      enum:
+      - FREE
+      - PAID
+      type: string
+      description: |-
+        * `FREE` - Free
+        * `PAID` - Paid
+    PointValue:
+      type: object
+      properties:
+        lng:
+          type: number
+          format: double
+        lat:
+          type: number
+          format: double
+      required:
+      - lat
+      - lng
+    PointValueRequest:
+      type: object
+      properties:
+        lng:
+          type: number
+          format: double
+        lat:
+          type: number
+          format: double
+      required:
+      - lat
+      - lng
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - password
+      - username
+    RequestOTPRequestRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+      required:
+      - phone_number
+    RequestOTPResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        dev_code:
+          type: string
+          nullable: true
+      required:
+      - detail
+    RequestRefundResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        status:
+          type: string
+      required:
+      - detail
+      - status
+    StateEnum:
+      enum:
+      - DRAFT
+      - OPEN
+      - MIN_MET
+      - LOCKED
+      - CONFIRMED
+      - COMPLETED
+      - CANCELLED
+      - EXPIRED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `OPEN` - Open
+        * `MIN_MET` - Min met
+        * `LOCKED` - Locked
+        * `CONFIRMED` - Confirmed
+        * `COMPLETED` - Completed
+        * `CANCELLED` - Cancelled
+        * `EXPIRED` - Expired
+    StripeWebhookResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    SupportContributionIntentResponse:
+      type: object
+      properties:
+        contribution:
+          $ref: '#/components/schemas/SupportContributionRead'
+        client_secret:
+          type: string
+          nullable: true
+        detail:
+          type: string
+      required:
+      - client_secret
+      - contribution
+      - detail
+    SupportContributionRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 8
+        status:
+          $ref: '#/components/schemas/SupportContributionReadStatusEnum'
+        stripe_payment_intent_id:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - id
+    SupportContributionReadStatusEnum:
+      enum:
+      - PENDING
+      - SUCCEEDED
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `SUCCEEDED` - Succeeded
+        * `FAILED` - Failed
+    SupportContributionWriteRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 8
+      required:
+      - amount
+    SupportMessageRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sender_name:
+          type: string
+          maxLength: 255
+        body:
+          type: string
+        moderation_status:
+          $ref: '#/components/schemas/ModerationStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - created_at
+      - id
+    SupportMessageWriteRequest:
+      type: object
+      properties:
+        sender_name:
+          type: string
+          maxLength: 255
+        body:
+          type: string
+          minLength: 1
+      required:
+      - body
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    UserBlock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        blocked:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - blocked
+      - created_at
+      - id
+    UserBlockRequest:
+      type: object
+      properties:
+        blocked:
+          type: integer
+      required:
+      - blocked
+    UserReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reported_user:
+          type: integer
+          nullable: true
+        event:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          maxLength: 255
+        details:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - reason
+    UserReportRequest:
+      type: object
+      properties:
+        reported_user:
+          type: integer
+          nullable: true
+        event:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+        details:
+          type: string
+      required:
+      - reason
+    UserVerification:
+      type: object
+      properties:
+        email_verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        phone_verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        phone_number:
+          type: string
+          maxLength: 32
+        risk_flags:
+          readOnly: true
+      required:
+      - email_verified_at
+      - phone_verified_at
+      - risk_flags
+    UserVerificationRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          maxLength: 32
+    VenueClickResponse:
+      type: object
+      properties:
+        redirect_url:
+          type: string
+          format: uri
+      required:
+      - redirect_url
+    VenuePartner:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 128
+        category:
+          type: string
+          maxLength: 64
+        approx_area_label:
+          type: string
+          maxLength: 255
+        referral_url:
+          type: string
+          format: uri
+          maxLength: 200
+      required:
+      - category
+      - city
+      - id
+      - name
+      - referral_url
+    VenueStatusEnum:
+      enum:
+      - NOT_SET
+      - PROPOSED
+      - CONFIRMED
+      type: string
+      description: |-
+        * `NOT_SET` - Not set
+        * `PROPOSED` - Proposed
+        * `CONFIRMED` - Confirmed
+    VerifyEmailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    VerifyOTPRequestRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+      required:
+      - code
+    VerifyOTPResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    VisibilityC36Enum:
+      enum:
+      - PUBLIC
+      - PRIVATE
+      type: string
+      description: |-
+        * `PUBLIC` - Public
+        * `PRIVATE` - Private
+    VisibilityEc4Enum:
+      enum:
+      - DISCOVERABLE
+      - INVITE_ONLY
+      type: string
+      description: |-
+        * `DISCOVERABLE` - Discoverable
+        * `INVITE_ONLY` - Invite only
+    WishlistItemRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        external_url:
+          type: string
+          format: uri
+          maxLength: 200
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          maxLength: 8
+        is_reserved:
+          type: boolean
+        reservation:
+          allOf:
+          - $ref: '#/components/schemas/WishlistReservationRead'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - reservation
+      - title
+    WishlistItemWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        external_url:
+          type: string
+          format: uri
+          maxLength: 200
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 8
+      required:
+      - title
+    WishlistReservationRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reserver_name:
+          type: string
+          maxLength: 255
+        reserver_email:
+          type: string
+          format: email
+          maxLength: 254
+        reserved_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - reserved_at
+      - reserver_name
+    WishlistReservationWriteRequest:
+      type: object
+      properties:
+        reserver_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        reserver_email:
+          type: string
+          format: email
+          maxLength: 254
+      required:
+      - reserver_name
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

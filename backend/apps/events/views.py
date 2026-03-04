@@ -1,0 +1,287 @@
+from django.contrib.gis.geos import Point
+from rest_framework import permissions, status
+from rest_framework import serializers
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
+
+from common.permissions import IsEventHost
+from common.schema import detail_response_serializer
+from apps.events.models import BirthdayEvent
+from apps.events.selectors import (
+    get_applications_for_host_event,
+    get_event_application,
+    get_event_by_id,
+    get_event_for_host,
+    get_events_for_host,
+    get_feed_queryset,
+    get_invites_for_host_event,
+)
+from apps.events.read_serializers import BirthdayEventReadSerializer, EventApplicationReadSerializer, EventInviteReadSerializer
+from apps.events.services import (
+    apply_to_event,
+    approve_application,
+    cancel_event,
+    complete_event,
+    confirm_venue,
+    create_event_invite,
+    decline_application,
+    lock_event,
+    publish_event,
+    toggle_expand,
+)
+from apps.events.write_serializers import BirthdayEventWriteSerializer, EventInviteWriteSerializer
+from apps.birthdays.services import assert_completed_birthday_profile
+
+
+@extend_schema_view(
+    post=extend_schema(request=BirthdayEventWriteSerializer, responses={201: BirthdayEventReadSerializer}),
+)
+class EventCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        assert_completed_birthday_profile(request.user)
+        serializer = BirthdayEventWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        event = serializer.save(host=request.user, payee_user=request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+    def get(self, request):
+        queryset = get_events_for_host(request.user)
+        return Response(BirthdayEventReadSerializer(queryset, many=True, context={"request": request}).data)
+
+
+@extend_schema_view(
+    get=extend_schema(responses={200: BirthdayEventReadSerializer}),
+    patch=extend_schema(request=BirthdayEventWriteSerializer, responses={200: BirthdayEventReadSerializer}),
+)
+class EventDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, event_id):
+        event = get_event_by_id(event_id)
+        data = BirthdayEventReadSerializer(event, context={"request": request}).data
+        is_approved_attendee = request.user.is_authenticated and event.attendees.filter(user=request.user).exists()
+        if not request.user.is_authenticated or (request.user != event.host and not is_approved_attendee):
+            data["venue_name"] = ""
+        elif event.state not in {BirthdayEvent.STATE_CONFIRMED, BirthdayEvent.STATE_LOCKED} and request.user != event.host:
+            data["venue_name"] = ""
+        return Response(data)
+
+    def patch(self, request, event_id):
+        event = get_event_for_host(event_id, request.user)
+        self.check_object_permissions(request, event)
+        serializer = BirthdayEventWriteSerializer(event, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+    permission_classes = [permissions.AllowAny]
+
+    def get_permissions(self):
+        if getattr(self, "request", None) and self.request.method == "PATCH":
+            return [permissions.IsAuthenticated(), IsEventHost()]
+        return [permissions.AllowAny()]
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: BirthdayEventReadSerializer}),
+)
+class EventPublishView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = publish_event(event, request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter(name="lat", required=True, type=float),
+            OpenApiParameter(name="lng", required=True, type=float),
+            OpenApiParameter(name="radius", required=False, type=float),
+            OpenApiParameter(name="category", required=False, type=str),
+            OpenApiParameter(name="q", required=False, type=str),
+        ],
+        responses={200: BirthdayEventReadSerializer(many=True)},
+    ),
+)
+class EventFeedView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        lat = request.query_params.get("lat")
+        lng = request.query_params.get("lng")
+        radius = float(request.query_params.get("radius", "5000"))
+        category = request.query_params.get("category")
+        query = request.query_params.get("q")
+        if lat is None or lng is None:
+            return Response({"detail": "lat and lng are required."}, status=status.HTTP_400_BAD_REQUEST)
+        user_point = Point(float(lng), float(lat), srid=4326)
+        queryset = get_feed_queryset(user_point, radius, category, query)
+        payload = BirthdayEventReadSerializer(queryset, many=True, context={"request": request}).data
+        for index, event in enumerate(queryset):
+            payload[index]["distance_meters"] = round(event.distance.m, 2)
+            payload[index]["venue_name"] = ""
+        return Response(payload)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer(
+            name="EventApplyRequest",
+            fields={"intro_message": serializers.CharField(required=False), "invite_code": serializers.CharField(required=False)},
+        ),
+        responses={201: EventApplicationReadSerializer},
+    ),
+)
+class EventApplyView(APIView):
+    throttle_scope = "apply"
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        application = apply_to_event(
+            event,
+            request.user,
+            intro_message=request.data.get("intro_message", ""),
+            invite_code=request.data.get("invite_code", ""),
+        )
+        return Response(EventApplicationReadSerializer(application).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: EventApplicationReadSerializer}),
+)
+class EventApproveView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id, app_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        application = get_event_application(event_id, app_id)
+        approve_application(event, application, request.user)
+        return Response(EventApplicationReadSerializer(application).data)
+
+    def get(self, request, event_id, app_id=None):
+        applications = get_applications_for_host_event(event_id, request.user)
+        return Response(EventApplicationReadSerializer(applications, many=True).data)
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: EventApplicationReadSerializer}),
+)
+class EventDeclineView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id, app_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        application = get_event_application(event_id, app_id)
+        decline_application(event, application, request.user)
+        return Response(EventApplicationReadSerializer(application).data)
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: BirthdayEventReadSerializer}),
+)
+class EventToggleExpandView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = toggle_expand(event, request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer(
+            name="EventVenueConfirmRequest",
+            fields={"venue_name": serializers.CharField(required=False)},
+        ),
+        responses={200: BirthdayEventReadSerializer},
+    ),
+)
+class EventVenueConfirmView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = confirm_venue(
+            event,
+            request.user,
+            venue_name=request.data.get("venue_name", ""),
+        )
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: BirthdayEventReadSerializer}),
+)
+class EventLockView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = lock_event(event, request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: BirthdayEventReadSerializer}),
+)
+class EventCancelView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = cancel_event(event, request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: BirthdayEventReadSerializer}),
+)
+class EventCompleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = complete_event(event, request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    get=extend_schema(responses={200: EventInviteReadSerializer(many=True)}),
+    post=extend_schema(request=EventInviteWriteSerializer, responses={201: EventInviteReadSerializer}),
+)
+class EventInviteView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def get(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        invites = get_invites_for_host_event(event_id, request.user)
+        return Response(EventInviteReadSerializer(invites, many=True).data)
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        serializer = EventInviteWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        invite = create_event_invite(
+            event,
+            request.user,
+            max_uses=serializer.validated_data.get("max_uses", 0),
+            expires_at=serializer.validated_data.get("expires_at"),
+        )
+        return Response(EventInviteReadSerializer(invite).data, status=status.HTTP_201_CREATED)

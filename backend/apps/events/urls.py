@@ -1,0 +1,35 @@
+from django.urls import path
+
+from apps.events.views import (
+    EventApplyView,
+    EventApproveView,
+    EventCancelView,
+    EventCompleteView,
+    EventCreateView,
+    EventDeclineView,
+    EventDetailView,
+    EventFeedView,
+    EventInviteView,
+    EventLockView,
+    EventPublishView,
+    EventToggleExpandView,
+    EventVenueConfirmView,
+)
+
+
+urlpatterns = [
+    path("events", EventCreateView.as_view(), name="event-create"),
+    path("events/feed", EventFeedView.as_view(), name="event-feed"),
+    path("events/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
+    path("events/<int:event_id>/publish", EventPublishView.as_view(), name="event-publish"),
+    path("events/<int:event_id>/apply", EventApplyView.as_view(), name="event-apply"),
+    path("events/<int:event_id>/applications", EventApproveView.as_view(), name="event-applications"),
+    path("events/<int:event_id>/applications/<int:app_id>/approve", EventApproveView.as_view(), name="event-approve"),
+    path("events/<int:event_id>/applications/<int:app_id>/decline", EventDeclineView.as_view(), name="event-decline"),
+    path("events/<int:event_id>/invites", EventInviteView.as_view(), name="event-invites"),
+    path("events/<int:event_id>/toggle-expand", EventToggleExpandView.as_view(), name="event-toggle-expand"),
+    path("events/<int:event_id>/venue/confirm", EventVenueConfirmView.as_view(), name="event-venue-confirm"),
+    path("events/<int:event_id>/lock", EventLockView.as_view(), name="event-lock"),
+    path("events/<int:event_id>/cancel", EventCancelView.as_view(), name="event-cancel"),
+    path("events/<int:event_id>/complete", EventCompleteView.as_view(), name="event-complete"),
+]
