@@ -51,12 +51,13 @@ class MeSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "is_staff",
             "verification",
             "phone_number",
             "birthday_profile_slug",
             "birthday_profile_completed",
         )
-        read_only_fields = ("id", "email")
+        read_only_fields = ("id", "email", "is_staff")
 
     def get_birthday_profile_slug(self, obj):
         profile = getattr(obj, "birthday_profile", None)

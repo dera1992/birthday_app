@@ -14,10 +14,15 @@ from apps.events.views import (
     EventPublishView,
     EventToggleExpandView,
     EventVenueConfirmView,
+    EventVenueRecommendationsView,
+    PackDetailView,
+    PackListView,
 )
 
 
 urlpatterns = [
+    path("packs", PackListView.as_view(), name="pack-list"),
+    path("packs/<slug:slug>", PackDetailView.as_view(), name="pack-detail"),
     path("events", EventCreateView.as_view(), name="event-create"),
     path("events/feed", EventFeedView.as_view(), name="event-feed"),
     path("events/<int:event_id>", EventDetailView.as_view(), name="event-detail"),
@@ -29,6 +34,7 @@ urlpatterns = [
     path("events/<int:event_id>/invites", EventInviteView.as_view(), name="event-invites"),
     path("events/<int:event_id>/toggle-expand", EventToggleExpandView.as_view(), name="event-toggle-expand"),
     path("events/<int:event_id>/venue/confirm", EventVenueConfirmView.as_view(), name="event-venue-confirm"),
+    path("events/<int:event_id>/venue-recommendations", EventVenueRecommendationsView.as_view(), name="event-venue-recommendations"),
     path("events/<int:event_id>/lock", EventLockView.as_view(), name="event-lock"),
     path("events/<int:event_id>/cancel", EventCancelView.as_view(), name="event-cancel"),
     path("events/<int:event_id>/complete", EventCompleteView.as_view(), name="event-complete"),

@@ -4,7 +4,15 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
-from apps.events.models import BirthdayEvent, EventApplication, EventInvite
+from apps.events.models import BirthdayEvent, CuratedPack, EventApplication, EventInvite
+
+
+def get_active_packs():
+    return CuratedPack.objects.filter(is_active=True).order_by("name")
+
+
+def get_pack_by_slug(slug: str) -> CuratedPack:
+    return get_object_or_404(CuratedPack, slug=slug, is_active=True)
 
 
 def get_event_by_id(event_id: int) -> BirthdayEvent:

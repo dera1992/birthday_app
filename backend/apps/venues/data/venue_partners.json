@@ -1,6 +1,57 @@
 [
-  {"name": "Northern Quarter Dining House", "city": "Manchester", "category": "DINING", "approx_area_label": "Northern Quarter", "referral_url": "https://example.com/manchester-dining-1"},
-  {"name": "Spinningfields Cocktail Lounge", "city": "Manchester", "category": "NIGHTLIFE", "approx_area_label": "Spinningfields", "referral_url": "https://example.com/manchester-nightlife-1"},
-  {"name": "Shoreditch Rooftop Social", "city": "London", "category": "NIGHTLIFE", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-nightlife-1"},
-  {"name": "Covent Garden Birthday Brunch", "city": "London", "category": "DINING", "approx_area_label": "Covent Garden", "referral_url": "https://example.com/london-dining-1"}
+  {"name": "Hawksmoor Covent Garden", "city": "London", "category": "DINNER", "approx_area_label": "Covent Garden", "referral_url": "https://example.com/london-dinner-1", "priority": 10, "is_sponsored": true, "neighborhood_tags": ["Covent Garden", "Central London"]},
+  {"name": "Gymkhana Mayfair", "city": "London", "category": "DINNER", "approx_area_label": "Mayfair", "referral_url": "https://example.com/london-dinner-2", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Mayfair", "Central London"]},
+  {"name": "Flat Iron Square Kitchen", "city": "London", "category": "DINNER", "approx_area_label": "Borough", "referral_url": "https://example.com/london-dinner-3", "priority": 5, "is_sponsored": false, "neighborhood_tags": ["Borough", "South London"]},
+
+  {"name": "Lucky Voice Soho", "city": "London", "category": "KARAOKE", "approx_area_label": "Soho", "referral_url": "https://example.com/london-karaoke-1", "priority": 10, "is_sponsored": true, "neighborhood_tags": ["Soho", "Central London"]},
+  {"name": "Smash Karaoke Shoreditch", "city": "London", "category": "KARAOKE", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-karaoke-2", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Shoreditch", "East London"]},
+  {"name": "Box Karaoke Camden", "city": "London", "category": "KARAOKE", "approx_area_label": "Camden", "referral_url": "https://example.com/london-karaoke-3", "priority": 5, "is_sponsored": false, "neighborhood_tags": ["Camden", "North London"]},
+
+  {"name": "Balans Soho Society", "city": "London", "category": "BRUNCH", "approx_area_label": "Soho", "referral_url": "https://example.com/london-brunch-1", "priority": 9, "is_sponsored": true, "neighborhood_tags": ["Soho", "Central London"]},
+  {"name": "Ivy Chelsea Garden", "city": "London", "category": "BRUNCH", "approx_area_label": "Chelsea", "referral_url": "https://example.com/london-brunch-2", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Chelsea", "West London"]},
+  {"name": "Caravan King's Cross", "city": "London", "category": "BRUNCH", "approx_area_label": "King's Cross", "referral_url": "https://example.com/london-brunch-3", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["King's Cross", "Central London"]},
+
+  {"name": "Boom Battle Bar Shoreditch", "city": "London", "category": "ACTIVITY", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-activity-1", "priority": 10, "is_sponsored": true, "neighborhood_tags": ["Shoreditch", "East London"]},
+  {"name": "All Star Lanes Brick Lane", "city": "London", "category": "ACTIVITY", "approx_area_label": "Brick Lane", "referral_url": "https://example.com/london-activity-2", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Brick Lane", "East London"]},
+  {"name": "Flight Club Bloomsbury", "city": "London", "category": "ACTIVITY", "approx_area_label": "Bloomsbury", "referral_url": "https://example.com/london-activity-3", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Bloomsbury", "Central London"]},
+
+  {"name": "Hyde Park Picnic Lawn", "city": "London", "category": "PARK", "approx_area_label": "Hyde Park", "referral_url": "https://example.com/london-park-1", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Hyde Park", "Central London", "Kensington"]},
+  {"name": "Regent's Park Open Air", "city": "London", "category": "PARK", "approx_area_label": "Regent's Park", "referral_url": "https://example.com/london-park-2", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Regent's Park", "North London"]},
+  {"name": "Victoria Park Meadow", "city": "London", "category": "PARK", "approx_area_label": "Victoria Park", "referral_url": "https://example.com/london-park-3", "priority": 5, "is_sponsored": false, "neighborhood_tags": ["Victoria Park", "East London"]},
+
+  {"name": "Skylight Rooftop Peckham", "city": "London", "category": "OUTDOOR", "approx_area_label": "Peckham", "referral_url": "https://example.com/london-outdoor-1", "priority": 9, "is_sponsored": true, "neighborhood_tags": ["Peckham", "South London"]},
+  {"name": "Pergola Paddington", "city": "London", "category": "OUTDOOR", "approx_area_label": "Paddington", "referral_url": "https://example.com/london-outdoor-2", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Paddington", "West London"]},
+  {"name": "Frank's Bar Peckham", "city": "London", "category": "OUTDOOR", "approx_area_label": "Peckham", "referral_url": "https://example.com/london-outdoor-3", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Peckham", "South London"]},
+
+  {"name": "Nightjar Shoreditch", "city": "London", "category": "BAR", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-bar-1", "priority": 10, "is_sponsored": true, "neighborhood_tags": ["Shoreditch", "East London"]},
+  {"name": "Dandelyan Southbank", "city": "London", "category": "BAR", "approx_area_label": "Southbank", "referral_url": "https://example.com/london-bar-2", "priority": 9, "is_sponsored": false, "neighborhood_tags": ["Southbank", "South London"]},
+  {"name": "Trailer Happiness Notting Hill", "city": "London", "category": "BAR", "approx_area_label": "Notting Hill", "referral_url": "https://example.com/london-bar-3", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Notting Hill", "West London"]},
+
+  {"name": "XOYO Shoreditch", "city": "London", "category": "CLUB", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-club-1", "priority": 10, "is_sponsored": true, "neighborhood_tags": ["Shoreditch", "East London"]},
+  {"name": "Fabric London", "city": "London", "category": "CLUB", "approx_area_label": "Farringdon", "referral_url": "https://example.com/london-club-2", "priority": 9, "is_sponsored": false, "neighborhood_tags": ["Farringdon", "Central London"]},
+  {"name": "Ministry of Sound", "city": "London", "category": "CLUB", "approx_area_label": "Elephant & Castle", "referral_url": "https://example.com/london-club-3", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Elephant & Castle", "South London"]},
+
+  {"name": "Experimental Cocktail Club", "city": "London", "category": "LOUNGE", "approx_area_label": "Chinatown", "referral_url": "https://example.com/london-lounge-1", "priority": 9, "is_sponsored": true, "neighborhood_tags": ["Chinatown", "Central London", "Soho"]},
+  {"name": "Callooh Callay Shoreditch", "city": "London", "category": "LOUNGE", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-lounge-2", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Shoreditch", "East London"]},
+  {"name": "Milk & Honey Soho", "city": "London", "category": "LOUNGE", "approx_area_label": "Soho", "referral_url": "https://example.com/london-lounge-3", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Soho", "Central London"]},
+
+  {"name": "The Venue Hire Company Central", "city": "London", "category": "PRIVATE", "approx_area_label": "Central London", "referral_url": "https://example.com/london-private-1", "priority": 10, "is_sponsored": true, "neighborhood_tags": ["Central London"]},
+  {"name": "HAC Private Events", "city": "London", "category": "PRIVATE", "approx_area_label": "Moorgate", "referral_url": "https://example.com/london-private-2", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Moorgate", "City of London"]},
+  {"name": "Arch 406 Brixton", "city": "London", "category": "PRIVATE", "approx_area_label": "Brixton", "referral_url": "https://example.com/london-private-3", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Brixton", "South London"]},
+
+  {"name": "Northern Quarter Dining House", "city": "Manchester", "category": "DINING", "approx_area_label": "Northern Quarter", "referral_url": "https://example.com/manchester-dining-1", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Northern Quarter", "City Centre"]},
+  {"name": "Elnecot Manchester", "city": "Manchester", "category": "DINING", "approx_area_label": "Ancoats", "referral_url": "https://example.com/manchester-dining-2", "priority": 8, "is_sponsored": true, "neighborhood_tags": ["Ancoats", "City Centre"]},
+
+  {"name": "Spinningfields Cocktail Lounge", "city": "Manchester", "category": "NIGHTLIFE", "approx_area_label": "Spinningfields", "referral_url": "https://example.com/manchester-nightlife-1", "priority": 8, "is_sponsored": false, "neighborhood_tags": ["Spinningfields", "City Centre"]},
+  {"name": "Soup Kitchen Manchester", "city": "Manchester", "category": "NIGHTLIFE", "approx_area_label": "Northern Quarter", "referral_url": "https://example.com/manchester-nightlife-2", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Northern Quarter", "City Centre"]},
+
+  {"name": "Shoreditch Rooftop Social", "city": "London", "category": "NIGHTLIFE", "approx_area_label": "Shoreditch", "referral_url": "https://example.com/london-nightlife-1", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["Shoreditch", "East London"]},
+  {"name": "Covent Garden Birthday Brunch", "city": "London", "category": "DINING", "approx_area_label": "Covent Garden", "referral_url": "https://example.com/london-dining-1", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Covent Garden", "Central London"]},
+
+  {"name": "Lucky Voice Manchester", "city": "Manchester", "category": "KARAOKE", "approx_area_label": "City Centre", "referral_url": "https://example.com/manchester-karaoke-1", "priority": 8, "is_sponsored": true, "neighborhood_tags": ["City Centre"]},
+  {"name": "Bundobust Manchester", "city": "Manchester", "category": "BRUNCH", "approx_area_label": "Northern Quarter", "referral_url": "https://example.com/manchester-brunch-1", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Northern Quarter", "City Centre"]},
+  {"name": "Junkyard Golf Manchester", "city": "Manchester", "category": "ACTIVITY", "approx_area_label": "Stevenson Square", "referral_url": "https://example.com/manchester-activity-1", "priority": 8, "is_sponsored": true, "neighborhood_tags": ["Stevenson Square", "Northern Quarter"]},
+  {"name": "Heaton Park Events", "city": "Manchester", "category": "PARK", "approx_area_label": "Heaton Park", "referral_url": "https://example.com/manchester-park-1", "priority": 6, "is_sponsored": false, "neighborhood_tags": ["Heaton Park", "North Manchester"]},
+  {"name": "Escape Room Manchester", "city": "Manchester", "category": "ACTIVITY", "approx_area_label": "City Centre", "referral_url": "https://example.com/manchester-activity-2", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["City Centre"]},
+  {"name": "HOME Manchester Private", "city": "Manchester", "category": "PRIVATE", "approx_area_label": "First Street", "referral_url": "https://example.com/manchester-private-1", "priority": 7, "is_sponsored": false, "neighborhood_tags": ["First Street", "City Centre"]}
 ]

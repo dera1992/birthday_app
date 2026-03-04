@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Dinner + Karaoke Night",
+    "slug": "dinner-karaoke",
+    "description": "Start with a sit-down dinner then move to a private karaoke room for the ultimate birthday combo.",
+    "icon_emoji": "\ud83c\udf7d\ufe0f",
+    "is_active": true,
+    "defaults": {
+      "category": "DINING",
+      "agenda_template": "7 PM \u2013 Meet and greet at restaurant\n8 PM \u2013 3-course dinner\n10 PM \u2013 Move to karaoke venue\n11 PM \u2013 Private karaoke room until midnight",
+      "min_guests": 6,
+      "max_guests": 14,
+      "radius_meters": 3000,
+      "payment_mode": "PAID",
+      "criteria_defaults": {"verified_only": true},
+      "venue_categories": ["DINNER", "KARAOKE"],
+      "budget_range_label": "\u00a340\u2013\u00a370 per person"
+    }
+  },
+  {
+    "name": "Brunch + Activity",
+    "slug": "brunch-activity",
+    "description": "A leisurely brunch followed by a fun group activity \u2014 axe throwing, pottery or escape room.",
+    "icon_emoji": "\ud83e\udd42",
+    "is_active": true,
+    "defaults": {
+      "category": "DINING",
+      "agenda_template": "11 AM \u2013 Bottomless brunch\n1:30 PM \u2013 Group activity of host's choice\n3:30 PM \u2013 Wind down with drinks",
+      "min_guests": 4,
+      "max_guests": 10,
+      "radius_meters": 4000,
+      "payment_mode": "PAID",
+      "criteria_defaults": {"verified_only": false},
+      "venue_categories": ["BRUNCH", "ACTIVITY"],
+      "budget_range_label": "\u00a335\u2013\u00a360 per person"
+    }
+  },
+  {
+    "name": "Picnic + Photography",
+    "slug": "picnic-photos",
+    "description": "An elegant picnic in the park with a roving photographer capturing candid birthday moments.",
+    "icon_emoji": "\ud83c\udf3f",
+    "is_active": true,
+    "defaults": {
+      "category": "OUTDOORS",
+      "agenda_template": "1 PM \u2013 Arrive at picnic spot\n1:30 PM \u2013 Picnic food and drinks\n3 PM \u2013 Golden-hour photos\n4 PM \u2013 Wrap up",
+      "min_guests": 4,
+      "max_guests": 12,
+      "radius_meters": 5000,
+      "payment_mode": "PAID",
+      "criteria_defaults": {"verified_only": false},
+      "venue_categories": ["PARK", "OUTDOOR"],
+      "budget_range_label": "\u00a320\u2013\u00a340 per person"
+    }
+  },
+  {
+    "name": "Night Out",
+    "slug": "night-out",
+    "description": "Pre-drinks at a cocktail bar, then exclusive entry to a curated club night.",
+    "icon_emoji": "\ud83c\udf19",
+    "is_active": true,
+    "defaults": {
+      "category": "NIGHTLIFE",
+      "agenda_template": "9 PM \u2013 Pre-drinks at cocktail bar\n10:30 PM \u2013 Move to club\n11 PM \u2013 Entry with reserved area\n2 AM \u2013 Night ends",
+      "min_guests": 6,
+      "max_guests": 20,
+      "radius_meters": 2000,
+      "payment_mode": "PAID",
+      "criteria_defaults": {"verified_only": true},
+      "venue_categories": ["BAR", "CLUB"],
+      "budget_range_label": "\u00a325\u2013\u00a350 per person"
+    }
+  },
+  {
+    "name": "Chill Night In",
+    "slug": "chill-night",
+    "description": "An intimate house party vibe \u2014 board games, good food, and great company.",
+    "icon_emoji": "\ud83d\udecf\ufe0f",
+    "is_active": true,
+    "defaults": {
+      "category": "WELLNESS",
+      "agenda_template": "7 PM \u2013 Guests arrive\n7:30 PM \u2013 Dinner\n9 PM \u2013 Games and cake\n11 PM \u2013 Wind down",
+      "min_guests": 4,
+      "max_guests": 8,
+      "radius_meters": 8000,
+      "payment_mode": "FREE",
+      "criteria_defaults": {"verified_only": false},
+      "venue_categories": ["LOUNGE", "PRIVATE"],
+      "budget_range_label": "No cover \u2014 BYO"
+    }
+  }
+]

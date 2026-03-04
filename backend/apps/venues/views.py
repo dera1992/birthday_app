@@ -1,12 +1,13 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
 
-from apps.venues.models import ReferralClick
+from apps.venues.models import ReferralClick, VenuePartner
 from apps.venues.selectors import get_active_venue, get_recommendation_queryset
-from apps.venues.serializers import VenuePartnerSerializer
+from apps.venues.serializers import VenueAdminSerializer, VenuePartnerSerializer
 
 
 @extend_schema_view(
@@ -47,3 +48,49 @@ class VenueClickView(APIView):
         venue = get_active_venue(venue_id)
         ReferralClick.objects.create(venue=venue, user=request.user if request.user.is_authenticated else None)
         return Response({"redirect_url": venue.referral_url}, status=status.HTTP_201_CREATED)
+
+
+class VenueAdminListView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        qs = VenuePartner.objects.all()
+        city = request.query_params.get("city")
+        category = request.query_params.get("category")
+        is_active = request.query_params.get("is_active")
+        is_sponsored = request.query_params.get("is_sponsored")
+        search = request.query_params.get("search")
+        if city:
+            qs = qs.filter(city__iexact=city)
+        if category:
+            qs = qs.filter(category__iexact=category)
+        if is_active is not None and is_active != "":
+            qs = qs.filter(is_active=is_active.lower() == "true")
+        if is_sponsored is not None and is_sponsored != "":
+            qs = qs.filter(is_sponsored=is_sponsored.lower() == "true")
+        if search:
+            qs = qs.filter(name__icontains=search)
+        qs = qs.order_by("-is_sponsored", "-priority", "name")
+        return Response(VenueAdminSerializer(qs, many=True).data)
+
+    def post(self, request):
+        serializer = VenueAdminSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class VenueAdminDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def patch(self, request, venue_id):
+        venue = get_object_or_404(VenuePartner, id=venue_id)
+        serializer = VenueAdminSerializer(venue, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, venue_id):
+        venue = get_object_or_404(VenuePartner, id=venue_id)
+        venue.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

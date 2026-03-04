@@ -5,7 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.events.models import BirthdayEvent, EventApplication, EventAttendee, EventInvite
+from apps.events.models import BirthdayEvent, CuratedPack, EventApplication, EventAttendee, EventInvite
 from apps.birthdays.services import assert_completed_birthday_profile
 from apps.notifications.models import Notification
 from apps.notifications.services import create_notification
@@ -16,6 +16,37 @@ from apps.safety.services import assert_not_blocked
 
 def _frontend_url():
     return getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+
+
+def apply_pack_defaults(validated_data: dict, pack: CuratedPack) -> dict:
+    """
+    Merge pack.defaults into validated_data for fields not explicitly provided by the user.
+    Only injects fields absent from validated_data.
+    """
+    defaults = pack.defaults or {}
+
+    field_mapping = {
+        "category": "category",
+        "min_guests": "min_guests",
+        "max_guests": "max_guests",
+        "radius_meters": "radius_meters",
+        "payment_mode": "payment_mode",
+    }
+    for pack_key, event_key in field_mapping.items():
+        if pack_key in defaults and event_key not in validated_data:
+            validated_data[event_key] = defaults[pack_key]
+
+    if "agenda_template" in defaults and "agenda" not in validated_data:
+        validated_data["agenda"] = defaults["agenda_template"]
+
+    if "criteria_defaults" in defaults:
+        existing_criteria = dict(validated_data.get("criteria") or {})
+        for k, v in defaults["criteria_defaults"].items():
+            if k not in existing_criteria:
+                existing_criteria[k] = v
+        validated_data["criteria"] = existing_criteria
+
+    return validated_data
 
 
 def recompute_event_state(event: BirthdayEvent):

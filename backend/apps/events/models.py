@@ -2,6 +2,23 @@ from django.conf import settings
 from django.contrib.gis.db import models
 
 
+class CuratedPack(models.Model):
+    name = models.CharField(max_length=128)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    icon_emoji = models.CharField(max_length=8, default="🎂")
+    is_active = models.BooleanField(default=True)
+    defaults = models.JSONField(default=dict)
+    # defaults keys: category, agenda_template, min_guests, max_guests, radius_meters,
+    # payment_mode, criteria_defaults (dict), venue_categories (list), budget_range_label
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.icon_emoji} {self.name}"
+
+
 class BirthdayEvent(models.Model):
     VISIBILITY_DISCOVERABLE = "DISCOVERABLE"
     VISIBILITY_INVITE_ONLY = "INVITE_ONLY"
@@ -67,6 +84,13 @@ class BirthdayEvent(models.Model):
     min_guests = models.PositiveIntegerField(default=1)
     max_guests = models.PositiveIntegerField(default=20)
     criteria = models.JSONField(default=dict, blank=True)
+    pack = models.ForeignKey(
+        "events.CuratedPack",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="events",
+    )
     payment_mode = models.CharField(max_length=16, choices=PAYMENT_MODE_CHOICES, default=PAYMENT_MODE_FREE)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     target_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

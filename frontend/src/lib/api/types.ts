@@ -32,6 +32,7 @@ export type Me = {
   email: string;
   first_name: string;
   last_name: string;
+  is_staff: boolean;
   verification?: UserVerification;
   birthday_profile_slug?: string | null;
   birthday_profile_completed?: boolean;
@@ -68,6 +69,7 @@ export type EventRecord = {
   min_guests: number;
   max_guests: number;
   criteria: Record<string, unknown>;
+  pack?: CuratedPack | null;
   payment_mode: string;
   amount: string | null;
   target_amount: string | null;
@@ -201,6 +203,48 @@ export type VenueRecommendation = {
   category: string;
   approx_area_label: string;
   referral_url: string;
+  is_sponsored: boolean;
+  priority: number;
+  neighborhood_tags: string[];
+};
+
+export type VenuePartnerAdmin = {
+  id: number;
+  name: string;
+  city: string;
+  category: string;
+  approx_area_label: string;
+  referral_url: string;
+  is_active: boolean;
+  is_sponsored: boolean;
+  priority: number;
+  neighborhood_tags: string[];
+};
+
+export type CuratedPackDefaults = {
+  category?: string;
+  agenda_template?: string;
+  min_guests?: number;
+  max_guests?: number;
+  radius_meters?: number;
+  payment_mode?: string;
+  criteria_defaults?: Record<string, unknown>;
+  venue_categories?: string[];
+  budget_range_label?: string;
+};
+
+export type CuratedPack = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  icon_emoji: string;
+  defaults: CuratedPackDefaults;
+};
+
+export type GroupedVenueRecommendation = {
+  category: string;
+  venues: VenueRecommendation[];
 };
 
 export type ConnectAccount = {

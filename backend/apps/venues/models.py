@@ -9,6 +9,9 @@ class VenuePartner(models.Model):
     approx_area_label = models.CharField(max_length=255, blank=True)
     referral_url = models.URLField()
     is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0)
+    is_sponsored = models.BooleanField(default=False)
+    neighborhood_tags = models.JSONField(default=list)
 
 
 class ReferralClick(models.Model):

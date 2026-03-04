@@ -2,7 +2,7 @@ from django.contrib.gis.geos import Point
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, inline_serializer
 
-from apps.events.models import BirthdayEvent, EventApplication, EventInvite
+from apps.events.models import BirthdayEvent, CuratedPack, EventApplication, EventInvite
 
 
 @extend_schema_field(
@@ -29,10 +29,12 @@ class PointFieldSerializer(serializers.Field):
 
 class BirthdayEventWriteSerializer(serializers.ModelSerializer):
     location_point = PointFieldSerializer()
+    pack_slug = serializers.SlugField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = BirthdayEvent
         fields = (
+            "pack_slug",
             "title",
             "description",
             "agenda",
@@ -54,6 +56,13 @@ class BirthdayEventWriteSerializer(serializers.ModelSerializer):
             "expense_breakdown",
             "lock_deadline_at",
         )
+
+    def validate_pack_slug(self, value):
+        if not value:
+            return None
+        if not CuratedPack.objects.filter(slug=value, is_active=True).exists():
+            raise serializers.ValidationError("Pack not found or inactive.")
+        return value
 
 
 class EventApplicationWriteSerializer(serializers.ModelSerializer):

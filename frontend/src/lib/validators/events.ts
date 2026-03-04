@@ -8,6 +8,7 @@ export const eventFilterSchema = z.object({
 });
 
 export const eventCreateSchema = z.object({
+  pack_slug: z.string().optional().nullable(),
   title: z.string().min(3),
   description: z.string().min(10),
   agenda: z.string().min(5),

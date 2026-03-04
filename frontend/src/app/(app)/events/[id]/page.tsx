@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -20,7 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
 import { EventShareCard } from "@/features/events/components/event-share-card";
 import { useApplyToEvent, useEvent } from "@/features/events/api";
-import { useVenueClick, useVenueRecommendations } from "@/features/venues/api";
+import { useVenueClick } from "@/features/venues/api";
+import { useEventVenueRecommendations } from "@/features/packs/api";
 import { getErrorMessage } from "@/lib/api/errors";
 import { applySchema } from "@/lib/validators/events";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -41,11 +42,16 @@ export default function EventDetailPage() {
   const eventQuery = useEvent(eventId);
   const applyMutation = useApplyToEvent(eventId);
   const venueClick = useVenueClick();
+  const venueRecsQuery = useEventVenueRecommendations(eventId);
   const event = eventQuery.data;
-  const venuesQuery = useVenueRecommendations({
-    city: event?.approx_area_label,
-    category: event?.category,
-  });
+  const [activeVenueTab, setActiveVenueTab] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (venueRecsQuery.data?.length && !activeVenueTab) {
+      setActiveVenueTab(venueRecsQuery.data[0].category);
+    }
+  }, [venueRecsQuery.data, activeVenueTab]);
+
   const form = useForm<ApplyValues>({
     resolver: zodResolver(applySchema),
     defaultValues: { intro_message: "", invite_code: "" },
@@ -94,7 +100,6 @@ export default function EventDetailPage() {
   const hostProfile = event.host_profile;
   const isEventOpen = event.state === "OPEN" || event.state === "MIN_MET";
 
-  // Ordered list of blockers the user must resolve before applying
   const blockers: { label: string; action?: { href: string; text: string } }[] = [];
   if (user) {
     if (!birthdayProfileReady) {
@@ -115,6 +120,9 @@ export default function EventDetailPage() {
   }
   const canApply = user !== null && blockers.length === 0;
 
+  const venueGroups = venueRecsQuery.data ?? [];
+  const activeGroup = venueGroups.find((g) => g.category === activeVenueTab) ?? venueGroups[0] ?? null;
+
   return (
     <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
       {/* ── Left column ──────────────────────────────────────────────────── */}
@@ -125,6 +133,11 @@ export default function EventDetailPage() {
               <Badge>{event.category}</Badge>
               <Badge variant="outline">{event.state}</Badge>
               <Badge variant="warning">Refund guarantee</Badge>
+              {event.pack ? (
+                <Badge variant="outline">
+                  {event.pack.icon_emoji} {event.pack.name}
+                </Badge>
+              ) : null}
             </div>
             <CardTitle className="pt-3 font-display text-4xl">{event.title}</CardTitle>
             <CardDescription>{event.description}</CardDescription>
@@ -342,28 +355,74 @@ export default function EventDetailPage() {
           </Card>
         ) : null}
 
+        {/* ── Venue recommendations (grouped by pack categories) ─────── */}
         <Card>
           <CardHeader>
             <CardTitle>Venue recommendations</CardTitle>
-            <CardDescription>Referral partners that fit the city and category of this experience.</CardDescription>
+            <CardDescription>
+              {event.pack
+                ? `Curated for the ${event.pack.icon_emoji} ${event.pack.name} pack — click to visit partner pages.`
+                : "Referral partners that fit the city and category of this experience."}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            {venuesQuery.isLoading ? <LoadingBlock message="Loading venue partners..." className="md:col-span-2 min-h-[160px]" /> : null}
-            {venuesQuery.error ? (
-              <ErrorState description={getErrorMessage(venuesQuery.error, "Unable to load venue recommendations.")} className="md:col-span-2 min-h-[160px]" />
+          <CardContent>
+            {venueRecsQuery.isLoading ? (
+              <LoadingBlock message="Loading venue partners..." className="min-h-[120px]" />
             ) : null}
-            {!venuesQuery.isLoading && !venuesQuery.error && !(venuesQuery.data ?? []).length ? (
-              <EmptyState title="No venue partners for this filter yet" description="Try a different city or category later." className="md:col-span-2 min-h-[160px]" />
+            {venueRecsQuery.error ? (
+              <ErrorState description={getErrorMessage(venueRecsQuery.error, "Unable to load venue recommendations.")} className="min-h-[120px]" />
             ) : null}
-            {(venuesQuery.data ?? []).map((venue) => (
-              <div key={venue.id} className="rounded-[24px] border border-border bg-background/70 p-5">
-                <p className="font-semibold">{venue.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{venue.city} · {venue.approx_area_label}</p>
-                <Button variant="outline" className="mt-4 w-full" onClick={() => handleVenueRedirect(venue.id)}>
-                  View partner
-                </Button>
-              </div>
-            ))}
+
+            {!venueRecsQuery.isLoading && !venueRecsQuery.error ? (
+              <>
+                {/* Category tabs — only shown when >1 group */}
+                {venueGroups.length > 1 ? (
+                  <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+                    {venueGroups.map((group) => (
+                      <button
+                        key={group.category}
+                        onClick={() => setActiveVenueTab(group.category)}
+                        className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                          activeVenueTab === group.category
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background/70 text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        {group.category}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                {/* Venues for active tab */}
+                {!activeGroup || !activeGroup.venues.length ? (
+                  <EmptyState
+                    title="No venue partners yet"
+                    description="Check back later or explore the area independently."
+                    className="min-h-[120px]"
+                  />
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {activeGroup.venues.map((venue) => (
+                      <div key={venue.id} className="rounded-[24px] border border-border bg-background/70 p-5">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold">{venue.name}</p>
+                          {venue.is_sponsored ? (
+                            <Badge variant="warning" className="shrink-0 text-xs">Sponsored</Badge>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {venue.city} · {venue.approx_area_label}
+                        </p>
+                        <Button variant="outline" className="mt-4 w-full" onClick={() => handleVenueRedirect(venue.id)}>
+                          View partner
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : null}
           </CardContent>
         </Card>
       </div>

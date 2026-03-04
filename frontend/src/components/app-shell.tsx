@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, CreditCard, Gift, LayoutDashboard, MapPinned, Settings, Sparkles, Wallet } from "lucide-react";
+import { ClipboardList, CreditCard, Gift, LayoutDashboard, MapPinned, Settings, Sparkles, Store, Wallet } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/wallet", label: "Wallet", icon: Wallet },
     { href: "/connect", label: "Payouts", icon: CreditCard },
     { href: "/settings", label: "Settings", icon: Settings },
+    ...(user?.is_staff ? [{ href: "/venues", label: "Venues", icon: Store }] : []),
   ];
   const activeHref =
     nav

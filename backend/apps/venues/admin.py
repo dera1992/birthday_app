@@ -5,9 +5,10 @@ from apps.venues.models import ReferralClick, VenuePartner
 
 @admin.register(VenuePartner)
 class VenuePartnerAdmin(admin.ModelAdmin):
-    list_display = ("name", "city", "category", "approx_area_label", "is_active")
+    list_display = ("name", "city", "category", "approx_area_label", "is_sponsored", "priority", "is_active")
     search_fields = ("name", "city", "category", "approx_area_label")
-    list_filter = ("city", "category", "is_active")
+    list_filter = ("city", "category", "is_active", "is_sponsored")
+    ordering = ("-is_sponsored", "-priority", "name")
 
 
 @admin.register(ReferralClick)

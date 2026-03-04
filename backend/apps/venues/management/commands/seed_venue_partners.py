@@ -30,6 +30,9 @@ class Command(BaseCommand):
                     "approx_area_label": record.get("approx_area_label", ""),
                     "referral_url": record["referral_url"],
                     "is_active": record.get("is_active", True),
+                    "priority": record.get("priority", 0),
+                    "is_sponsored": record.get("is_sponsored", False),
+                    "neighborhood_tags": record.get("neighborhood_tags", []),
                 },
             )
             if was_created:

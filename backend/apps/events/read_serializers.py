@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.events.models import BirthdayEvent, EventApplication, EventInvite
+from apps.events.pack_serializers import CuratedPackReadSerializer
 from apps.events.write_serializers import PointFieldSerializer
 
 
@@ -11,6 +12,7 @@ class BirthdayEventReadSerializer(serializers.ModelSerializer):
     host_profile = serializers.SerializerMethodField()
     my_application = serializers.SerializerMethodField()
     pending_application_count = serializers.SerializerMethodField()
+    pack = CuratedPackReadSerializer(read_only=True)
 
     class Meta:
         model = BirthdayEvent
@@ -33,6 +35,7 @@ class BirthdayEventReadSerializer(serializers.ModelSerializer):
             "min_guests",
             "max_guests",
             "criteria",
+            "pack",
             "payment_mode",
             "amount",
             "target_amount",

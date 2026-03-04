@@ -9,6 +9,7 @@ from common.permissions import IsEventHost
 from common.schema import detail_response_serializer
 from apps.events.models import BirthdayEvent
 from apps.events.selectors import (
+    get_active_packs,
     get_applications_for_host_event,
     get_event_application,
     get_event_by_id,
@@ -16,9 +17,12 @@ from apps.events.selectors import (
     get_events_for_host,
     get_feed_queryset,
     get_invites_for_host_event,
+    get_pack_by_slug,
 )
+from apps.events.pack_serializers import CuratedPackReadSerializer
 from apps.events.read_serializers import BirthdayEventReadSerializer, EventApplicationReadSerializer, EventInviteReadSerializer
 from apps.events.services import (
+    apply_pack_defaults,
     apply_to_event,
     approve_application,
     cancel_event,
@@ -32,6 +36,8 @@ from apps.events.services import (
 )
 from apps.events.write_serializers import BirthdayEventWriteSerializer, EventInviteWriteSerializer
 from apps.birthdays.services import assert_completed_birthday_profile
+from apps.venues.selectors import get_grouped_venue_recommendations
+from apps.venues.serializers import VenuePartnerSerializer
 
 
 @extend_schema_view(
@@ -44,7 +50,11 @@ class EventCreateView(APIView):
         assert_completed_birthday_profile(request.user)
         serializer = BirthdayEventWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        event = serializer.save(host=request.user, payee_user=request.user)
+        pack_slug = serializer.validated_data.pop("pack_slug", None)
+        pack = get_pack_by_slug(pack_slug) if pack_slug else None
+        if pack:
+            apply_pack_defaults(serializer.validated_data, pack)
+        event = serializer.save(host=request.user, payee_user=request.user, pack=pack)
         return Response(BirthdayEventReadSerializer(event, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def get(self, request):
@@ -285,3 +295,68 @@ class EventInviteView(APIView):
             expires_at=serializer.validated_data.get("expires_at"),
         )
         return Response(EventInviteReadSerializer(invite).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema_view(
+    get=extend_schema(responses={200: CuratedPackReadSerializer(many=True)}),
+)
+class PackListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        packs = get_active_packs()
+        return Response(CuratedPackReadSerializer(packs, many=True).data)
+
+
+@extend_schema_view(
+    get=extend_schema(responses={200: CuratedPackReadSerializer}),
+)
+class PackDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, slug):
+        pack = get_pack_by_slug(slug)
+        return Response(CuratedPackReadSerializer(pack).data)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        responses={
+            200: inline_serializer(
+                name="GroupedVenueRecommendations",
+                fields={
+                    "category": serializers.CharField(),
+                    "venues": VenuePartnerSerializer(many=True),
+                },
+                many=True,
+            )
+        }
+    ),
+)
+class EventVenueRecommendationsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, event_id):
+        event = get_event_by_id(event_id)
+        venue_categories = []
+        if event.pack_id:
+            venue_categories = event.pack.defaults.get("venue_categories") or []
+        if not venue_categories:
+            venue_categories = [event.category]
+        area = (event.approx_area_label or "").lower()
+        if "manchester" in area:
+            city = "Manchester"
+        elif "london" in area:
+            city = "London"
+        else:
+            city = None
+        grouped = get_grouped_venue_recommendations(
+            city=city,
+            venue_categories=venue_categories,
+            neighborhood_tag=event.approx_area_label or None,
+        )
+        payload = [
+            {"category": cat, "venues": VenuePartnerSerializer(venues, many=True).data}
+            for cat, venues in grouped.items()
+        ]
+        return Response(payload)

@@ -1,13 +1,21 @@
 from django.contrib import admin
 
-from apps.events.models import BirthdayEvent, EventApplication, EventAttendee, EventInvite
+from apps.events.models import BirthdayEvent, CuratedPack, EventApplication, EventAttendee, EventInvite
+
+
+@admin.register(CuratedPack)
+class CuratedPackAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "icon_emoji", "is_active")
+    prepopulated_fields = {"slug": ("name",)}
+    search_fields = ("name", "slug")
+    list_filter = ("is_active",)
 
 
 @admin.register(BirthdayEvent)
 class BirthdayEventAdmin(admin.ModelAdmin):
-    list_display = ("title", "host", "category", "visibility", "state", "amount", "target_amount", "venue_status", "start_at")
+    list_display = ("title", "host", "pack", "category", "visibility", "state", "amount", "target_amount", "venue_status", "start_at")
     search_fields = ("title", "host__username", "approx_area_label", "category")
-    list_filter = ("state", "visibility", "venue_status", "category")
+    list_filter = ("state", "visibility", "venue_status", "category", "pack")
 
 
 @admin.register(EventInvite)

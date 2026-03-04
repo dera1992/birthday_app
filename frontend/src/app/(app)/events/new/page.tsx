@@ -13,20 +13,31 @@ import { ErrorNotice } from "@/components/ui/error-notice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PackGrid } from "@/components/packs/PackGrid";
+import { PackPreviewDrawer } from "@/components/packs/PackPreviewDrawer";
 import { useAuth } from "@/features/auth/auth-context";
 import { publishEventRequest, useCreateEvent } from "@/features/events/api";
+import { usePacks } from "@/features/packs/api";
 import { getErrorMessage } from "@/lib/api/errors";
 import { eventCreateSchema } from "@/lib/validators/events";
+import type { CuratedPack } from "@/lib/api/types";
 
 type EventValues = z.infer<typeof eventCreateSchema>;
+type Step = "pack-select" | "form";
 
 export default function NewEventPage() {
   const { user } = useAuth();
   const createEvent = useCreateEvent();
+  const packsQuery = usePacks();
   const [submitMode, setSubmitMode] = useState<"draft" | "publish">("draft");
+  const [step, setStep] = useState<Step>("pack-select");
+  const [selectedPack, setSelectedPack] = useState<CuratedPack | null>(null);
+  const [previewPack, setPreviewPack] = useState<CuratedPack | null>(null);
+
   const form = useForm<EventValues>({
     resolver: zodResolver(eventCreateSchema),
     defaultValues: {
+      pack_slug: null,
       title: "",
       description: "",
       agenda: "",
@@ -80,6 +91,31 @@ export default function NewEventPage() {
     );
   }
 
+  function handlePackConfirm(pack: CuratedPack | null) {
+    if (pack) {
+      const d = pack.defaults;
+      if (d.category) form.setValue("category", d.category);
+      if (d.agenda_template) form.setValue("agenda", d.agenda_template);
+      if (d.min_guests != null) form.setValue("min_guests", d.min_guests);
+      if (d.max_guests != null) form.setValue("max_guests", d.max_guests);
+      if (d.radius_meters != null) form.setValue("radius_meters", d.radius_meters);
+      if (d.payment_mode) form.setValue("payment_mode", d.payment_mode);
+      if (d.criteria_defaults) {
+        const existing = form.getValues("criteria") || {};
+        for (const [k, v] of Object.entries(d.criteria_defaults)) {
+          if (!(k in existing)) {
+            form.setValue(`criteria.${k}` as Parameters<typeof form.setValue>[0], v as never);
+          }
+        }
+      }
+      form.setValue("pack_slug", pack.slug);
+    } else {
+      form.setValue("pack_slug", null);
+    }
+    setSelectedPack(pack);
+    setStep("form");
+  }
+
   async function onSubmit(values: EventValues) {
     setSubmitError(null);
     try {
@@ -98,8 +134,69 @@ export default function NewEventPage() {
     }
   }
 
+  // Step 1: Pack selection
+  if (step === "pack-select") {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-4xl">Choose a birthday pack</CardTitle>
+            <CardDescription>
+              Packs pre-fill your event details and show tailored venue recommendations. You can customise every field after selecting one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PackGrid
+              packs={packsQuery.data ?? []}
+              isLoading={packsQuery.isLoading}
+              selectedSlug={selectedPack?.slug ?? null}
+              onSelect={(pack) => setSelectedPack(pack)}
+              onPreview={(pack) => setPreviewPack(pack)}
+            />
+            <div className="mt-6 flex items-center justify-between">
+              <Button variant="ghost" onClick={() => handlePackConfirm(null)}>
+                Skip — use blank form
+              </Button>
+              <Button
+                disabled={!selectedPack}
+                onClick={() => selectedPack && handlePackConfirm(selectedPack)}
+              >
+                Continue with {selectedPack ? selectedPack.name : "pack"} →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <PackPreviewDrawer
+          pack={previewPack}
+          onClose={() => setPreviewPack(null)}
+          onSelect={(pack) => {
+            setPreviewPack(null);
+            handlePackConfirm(pack);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Step 2: Event creation form
   return (
     <div className="space-y-6">
+      {selectedPack ? (
+        <div className="flex items-center gap-3 rounded-[22px] border border-border bg-background/70 px-4 py-3">
+          <span className="text-2xl">{selectedPack.icon_emoji}</span>
+          <div>
+            <p className="text-sm font-semibold">{selectedPack.name}</p>
+            {selectedPack.defaults.budget_range_label ? (
+              <p className="text-xs text-muted-foreground">{selectedPack.defaults.budget_range_label}</p>
+            ) : null}
+          </div>
+          <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setStep("pack-select")}>
+            Change pack
+          </Button>
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-4xl">Create a new event</CardTitle>
