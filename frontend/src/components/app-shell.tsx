@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, CreditCard, Gift, Home, LayoutDashboard, MapPinned, Settings, Sparkles, Wallet } from "lucide-react";
+import { ClipboardList, CreditCard, Gift, LayoutDashboard, MapPinned, Settings, Sparkles, Wallet } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const payoutsEnabled = connectStatus.data?.connect_account?.payouts_enabled;
   const isOverview = pathname === "/";
   const nav = [
-    { href: "/", label: "Overview", icon: Home },
     { href: "/events", label: "Feed", icon: MapPinned },
     { href: "/events/mine", label: "My Events", icon: LayoutDashboard },
     {

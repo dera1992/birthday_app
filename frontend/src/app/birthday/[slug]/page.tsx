@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Elements } from "@stripe/react-stripe-js";
-import { Check, Copy, Gift, Pencil, Share2 } from "lucide-react";
+import { ArrowRight, Check, CheckCheck, Copy, Gift, Mail, Pencil, Phone, Share2 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 
@@ -68,7 +68,7 @@ type ReserveValues = z.infer<typeof wishlistReserveSchema>;
 export default function BirthdayProfilePage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
-  const { user } = useAuth();
+  const { user, isEmailVerified, isPhoneVerified } = useAuth();
 
   // ── Profile & core queries ─────────────────────────────────────────────────
   const profileQuery = useBirthdayProfile(slug);
@@ -201,8 +201,11 @@ export default function BirthdayProfilePage() {
         />
       )}
 
-      <main className="container max-w-3xl py-8 md:py-12">
-        <div className="space-y-6">
+      <main className="container max-w-5xl py-8 md:py-12">
+        <div className={isOwner ? "grid grid-cols-1 gap-6 lg:grid-cols-12" : "space-y-6"}>
+
+          {/* ── Main content (9 cols) ──────────────────────────────────────── */}
+          <div className={isOwner ? "space-y-6 lg:col-span-9" : "space-y-6"}>
 
           {/* ── Profile card ───────────────────────────────────────────────── */}
           <div className="overflow-hidden rounded-[32px] border border-border/60 bg-card shadow-[0_8px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.3)]">
@@ -621,7 +624,132 @@ export default function BirthdayProfilePage() {
               </div>
             )}
           </div>
+          {/* end tabs */}
+          </div>
+          {/* end 9-col main content */}
+
+        {/* ── Owner sidebar: account status + verification ────────────────── */}
+        {isOwner && (
+          <aside className="space-y-4 self-start lg:col-span-3 lg:sticky lg:top-24">
+
+            {/* Account status */}
+            <div className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Account status
+              </p>
+              <div className="flex items-center gap-3 rounded-[18px] border border-border/60 bg-background/70 px-4 py-3">
+                {profile?.profile_image ? (
+                  <img
+                    src={profile.profile_image}
+                    alt={fullName}
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-orange-400 text-xs font-bold text-white">
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{fullName || user?.email || "You"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.birthday_profile_completed ? "Profile ready" : "Profile incomplete"}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                    user?.birthday_profile_completed
+                      ? "border border-emerald-400/30 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                      : "border border-amber-400/30 bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                  }`}
+                >
+                  {user?.birthday_profile_completed ? "Ready" : "Needed"}
+                </span>
+              </div>
+            </div>
+
+            {/* Account verification */}
+            <div className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Account verification
+              </p>
+              <div className="space-y-2">
+                {/* Phone */}
+                <div className="flex items-center gap-3 rounded-[16px] border border-border/60 bg-background/70 px-4 py-3">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      isPhoneVerified
+                        ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">Phone</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isPhoneVerified ? "Verified" : "Not verified"}
+                    </p>
+                  </div>
+                  {isPhoneVerified ? (
+                    <CheckCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+                  ) : (
+                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
+                  )}
+                </div>
+
+                {/* Email */}
+                <div className="flex items-center gap-3 rounded-[16px] border border-border/60 bg-background/70 px-4 py-3">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      isEmailVerified
+                        ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">Email</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isEmailVerified ? "Verified" : "Not verified"}
+                    </p>
+                  </div>
+                  {isEmailVerified ? (
+                    <CheckCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+                  ) : (
+                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            <div className="rounded-[24px] border border-border/60 bg-card p-5 shadow-sm">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Quick actions
+              </p>
+              <div className="space-y-2">
+                <Button asChild className="w-full justify-between" size="sm">
+                  <Link href="/events/new">
+                    Create event
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full justify-between" size="sm">
+                  <Link href="/events">
+                    Open feed
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+          </aside>
+        )}
+
         </div>
+        {/* end grid */}
+
       </main>
     </>
   );
