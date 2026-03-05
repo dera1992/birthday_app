@@ -20,12 +20,16 @@ export function usePack(slug: string) {
   });
 }
 
-export function useEventVenueRecommendations(eventId: number | undefined) {
+export function useEventVenueRecommendations(
+  eventId: number | undefined,
+  userCoords?: { lat: number; lng: number } | null,
+) {
   return useQuery({
-    queryKey: ["event-venue-recommendations", eventId],
+    queryKey: ["event-venue-recommendations", eventId, userCoords],
     queryFn: () =>
       apiRequest<GroupedVenueRecommendation[]>(`/events/${eventId}/venue-recommendations`, {
         auth: false,
+        query: userCoords ? { lat: userCoords.lat, lng: userCoords.lng } : undefined,
       }),
     enabled: Boolean(eventId),
   });

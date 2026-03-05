@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ErrorNotice } from "@/components/ui/error-notice";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useBirthdayProfile, useWishlistCancel, useWishlistCreate } from "@/features/birthday/api";
+import { useBirthdayProfile, useWishlistCancel, useWishlistCreate, useWishlistDelete, useWishlistUpdate } from "@/features/birthday/api";
 import { useAuth } from "@/features/auth/auth-context";
 import { formatCurrency } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/api/errors";
@@ -164,7 +164,33 @@ function WishlistItemRow({
   };
   slug: string;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(item.title);
+  const [editDescription, setEditDescription] = useState(item.description);
+  const [editPrice, setEditPrice] = useState(item.price ?? "");
+  const [editUrl, setEditUrl] = useState(item.external_url ?? "");
+  const updateMutation = useWishlistUpdate(item.id, slug);
+  const deleteMutation = useWishlistDelete(item.id, slug);
   const cancelMutation = useWishlistCancel(item.id, slug);
+
+  async function handleSave() {
+    try {
+      await updateMutation.mutateAsync({ title: editTitle, description: editDescription, price: editPrice || null, external_url: editUrl || null });
+      toast.success("Item updated.");
+      setEditing(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Unable to update item."));
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      await deleteMutation.mutateAsync();
+      toast.success("Item deleted.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Unable to delete item."));
+    }
+  }
 
   async function handleClear() {
     try {
@@ -175,6 +201,25 @@ function WishlistItemRow({
     }
   }
 
+  if (editing) {
+    return (
+      <div className="rounded-[24px] border border-primary/30 bg-background/70 p-4 space-y-3">
+        <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Title" />
+        <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" rows={2} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input value={editUrl} onChange={(e) => setEditUrl(e.target.value)} placeholder="External URL (optional)" />
+          <Input value={editPrice} onChange={(e) => setEditPrice(e.target.value)} placeholder="Price (optional)" />
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleSave} disabled={!editTitle.trim() || updateMutation.isPending}>
+            {updateMutation.isPending ? "Saving…" : "Save"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-[24px] border border-border bg-background/70 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -182,12 +227,7 @@ function WishlistItemRow({
           <div className="flex items-center gap-2">
             <p className="font-semibold">{item.title}</p>
             {item.external_url ? (
-              <a
-                href={item.external_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground"
-              >
+              <a href={item.external_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             ) : null}
@@ -207,18 +247,17 @@ function WishlistItemRow({
           </Badge>
         </div>
       </div>
-      {item.is_reserved ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="mt-3"
-          disabled={cancelMutation.isPending}
-          onClick={handleClear}
-        >
-          {cancelMutation.isPending ? "Clearing…" : "Clear reservation"}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
+        <Button type="button" variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700" disabled={deleteMutation.isPending} onClick={handleDelete}>
+          {deleteMutation.isPending ? "Deleting…" : "Delete"}
         </Button>
-      ) : null}
+        {item.is_reserved ? (
+          <Button type="button" variant="ghost" size="sm" disabled={cancelMutation.isPending} onClick={handleClear}>
+            {cancelMutation.isPending ? "Clearing…" : "Clear reservation"}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

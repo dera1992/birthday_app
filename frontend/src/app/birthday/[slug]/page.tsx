@@ -29,6 +29,7 @@ import {
 } from "@/features/birthday/api";
 import { useGiftCatalog, useBirthdayGifts } from "@/features/gifts/queries";
 import { useAuth } from "@/features/auth/auth-context";
+import { useCreateBlock, useCreateReport } from "@/features/safety/api";
 import { StripePaymentForm } from "@/features/payments/components/stripe-payment-form";
 import { GiftCategoryPills } from "@/components/gifts/GiftCategoryPills";
 import { GiftGrid } from "@/components/gifts/GiftGrid";
@@ -77,6 +78,8 @@ export default function BirthdayProfilePage() {
   const isOwner = Boolean(user?.id && profile?.user === user.id);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
+  const reportMutation = useCreateReport();
+  const blockMutation = useCreateBlock();
   const messageCreate = useSupportMessageCreate(slug);
   const messageApprove = useSupportMessageApprove(slug);
   const messageReject = useSupportMessageReject(slug);
@@ -94,6 +97,9 @@ export default function BirthdayProfilePage() {
   const [messageError, setMessageError] = useState<string | null>(null);
   const [contributionError, setContributionError] = useState<string | null>(null);
   const [birthdayLinkCopied, setBirthdayLinkCopied] = useState(false);
+  const [showProfileReportForm, setShowProfileReportForm] = useState(false);
+  const [profileReportReason, setProfileReportReason] = useState("");
+  const [profileReportDetails, setProfileReportDetails] = useState("");
 
   // ── Forms ─────────────────────────────────────────────────────────────────
   const messageForm = useForm<MessageValues>({
@@ -164,6 +170,29 @@ export default function BirthdayProfilePage() {
       window.setTimeout(() => setBirthdayLinkCopied(false), 1800);
     } catch {
       toast.error("Unable to copy the birthday page link.");
+    }
+  }
+
+  async function handleProfileReport() {
+    if (!profileReportReason.trim() || !profile?.user) return;
+    try {
+      await reportMutation.mutateAsync({ reported_user: profile.user, reason: profileReportReason, details: profileReportDetails });
+      toast.success("Report submitted. Our team will review it shortly.");
+      setShowProfileReportForm(false);
+      setProfileReportReason("");
+      setProfileReportDetails("");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Unable to submit report."));
+    }
+  }
+
+  async function handleProfileBlock() {
+    if (!profile?.user) return;
+    try {
+      await blockMutation.mutateAsync({ blocked: profile.user });
+      toast.success("User blocked. You will no longer see their content.");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Unable to block this user."));
     }
   }
 
@@ -391,7 +420,7 @@ export default function BirthdayProfilePage() {
                     </p>
                   ) : (
                     (profile?.wishlist_items ?? []).map((item) => (
-                      <WishlistReserveCard key={item.id} item={item} slug={slug} isOwner={isOwner} />
+                      <WishlistReserveCard key={item.id} item={item} slug={slug} isOwner={isOwner} userEmail={user?.email ?? null} />
                     ))
                   )}
                 </CardContent>
@@ -638,17 +667,6 @@ export default function BirthdayProfilePage() {
                 Account status
               </p>
               <div className="flex items-center gap-3 rounded-[18px] border border-border/60 bg-background/70 px-4 py-3">
-                {profile?.profile_image ? (
-                  <img
-                    src={profile.profile_image}
-                    alt={fullName}
-                    className="h-9 w-9 shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-orange-400 text-xs font-bold text-white">
-                    {initials}
-                  </div>
-                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{fullName || user?.email || "You"}</p>
                   <p className="text-xs text-muted-foreground">
@@ -750,6 +768,60 @@ export default function BirthdayProfilePage() {
         </div>
         {/* end grid */}
 
+        {/* Safety actions — non-owner signed-in users only */}
+        {user && !isOwner && profile ? (
+          <div className="mt-8 border-t border-border/40 pt-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Safety</p>
+            {!showProfileReportForm ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProfileReportForm(true)}
+                >
+                  Report profile
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/20"
+                  onClick={handleProfileBlock}
+                  disabled={blockMutation.isPending || blockMutation.isSuccess}
+                >
+                  {blockMutation.isSuccess ? "User blocked" : blockMutation.isPending ? "Blocking…" : "Block user"}
+                </Button>
+              </div>
+            ) : (
+              <div className="max-w-sm space-y-3">
+                <select
+                  className="flex h-10 w-full rounded-2xl border border-input bg-background/80 px-4 text-sm"
+                  value={profileReportReason}
+                  onChange={(e) => setProfileReportReason(e.target.value)}
+                >
+                  <option value="">Select a reason…</option>
+                  <option value="spam">Spam or misleading</option>
+                  <option value="inappropriate">Inappropriate content</option>
+                  <option value="fake_profile">Fake profile</option>
+                  <option value="harassment">Harassment</option>
+                  <option value="other">Other</option>
+                </select>
+                <Textarea
+                  placeholder="Optional: add more details"
+                  value={profileReportDetails}
+                  onChange={(e) => setProfileReportDetails(e.target.value)}
+                  rows={2}
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleProfileReport} disabled={!profileReportReason || reportMutation.isPending}>
+                    {reportMutation.isPending ? "Submitting…" : "Submit report"}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowProfileReportForm(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
+
       </main>
     </>
   );
@@ -761,6 +833,7 @@ function WishlistReserveCard({
   item,
   slug,
   isOwner,
+  userEmail,
 }: {
   item: {
     id: number;
@@ -769,29 +842,50 @@ function WishlistReserveCard({
     price: string | null;
     currency: string;
     is_reserved: boolean;
-    reservation?: { reserver_name: string } | null;
+    reservation?: { reserver_name: string; reserver_email?: string } | null;
   };
   slug: string;
   isOwner: boolean;
+  userEmail: string | null;
 }) {
   const reserveMutation = useWishlistReserve(item.id, slug);
   const cancelMutation = useWishlistCancel(item.id, slug);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState("");
   const form = useForm<ReserveValues>({
     resolver: zodResolver(wishlistReserveSchema),
     defaultValues: { reserver_name: "", reserver_email: "" },
   });
+
+  const isReserver = Boolean(
+    item.is_reserved &&
+    !isOwner &&
+    userEmail &&
+    item.reservation?.reserver_email?.toLowerCase() === userEmail.toLowerCase()
+  );
 
   async function onReserve(values: ReserveValues) {
     await reserveMutation.mutateAsync(values);
     toast.success("Item reserved.");
   }
 
-  async function onCancelReservation() {
+  async function onOwnerClear() {
     try {
       await cancelMutation.mutateAsync();
-      toast.success("Reservation cancelled.");
+      toast.success("Reservation cleared.");
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to clear reservation."));
+    }
+  }
+
+  async function onReserverCancel() {
+    try {
+      await cancelMutation.mutateAsync({ message: cancelMessage });
+      toast.success("Reservation cancelled. The owner has been notified.");
+      setShowCancelForm(false);
+      setCancelMessage("");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Unable to cancel reservation."));
     }
   }
 
@@ -818,11 +912,45 @@ function WishlistReserveCard({
           </Badge>
         </div>
       </div>
+
+      {/* Owner: clear reservation */}
       {item.is_reserved && isOwner ? (
-        <Button type="button" variant="ghost" size="sm" className="mt-3 text-xs" onClick={onCancelReservation}>
-          Clear reservation
+        <Button type="button" variant="ghost" size="sm" className="mt-3 text-xs" onClick={onOwnerClear} disabled={cancelMutation.isPending}>
+          {cancelMutation.isPending ? "Clearing…" : "Clear reservation"}
         </Button>
       ) : null}
+
+      {/* Reserver: cancel with message */}
+      {isReserver ? (
+        <div className="mt-3">
+          {!showCancelForm ? (
+            <Button type="button" variant="ghost" size="sm" className="text-xs text-rose-600 hover:text-rose-700" onClick={() => setShowCancelForm(true)}>
+              Cancel my reservation
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-[16px] border border-border bg-background/60 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Leave a message for the owner (optional)</p>
+              <Textarea
+                placeholder="Let them know why you're cancelling…"
+                value={cancelMessage}
+                onChange={(e) => setCancelMessage(e.target.value)}
+                rows={2}
+                className="text-sm"
+              />
+              <div className="flex gap-2">
+                <Button size="sm" variant="destructive" onClick={onReserverCancel} disabled={cancelMutation.isPending}>
+                  {cancelMutation.isPending ? "Cancelling…" : "Confirm cancel"}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => { setShowCancelForm(false); setCancelMessage(""); }}>
+                  Back
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Reserve form */}
       {!item.is_reserved ? (
         <form
           className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]"

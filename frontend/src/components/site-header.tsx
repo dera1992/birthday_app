@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useAuth } from "@/features/auth/auth-context";
-import { CITY_PRESETS } from "@/lib/geo";
+import { CITY_PRESETS, getBrowserCoordinates, searchPlaces } from "@/lib/geo";
+import { useLocationContext } from "@/lib/location-context";
 
 function UserMenu() {
   const { user, logout } = useAuth();
@@ -93,14 +94,86 @@ export function SiteHeader() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedCity, setSelectedCity] = useState(CITY_PRESETS[0].label);
+  const [locationInput, setLocationInput] = useState(CITY_PRESETS[0].label);
+  const { setCoords } = useLocationContext();
+  const [locationSuggestions, setLocationSuggestions] = useState<Array<{ label: string; city: string; lat?: number; lng?: number }>>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const locationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (pathname === "/events") {
       setSearch(searchParams.get("q") ?? "");
       const city = searchParams.get("city");
-      setSelectedCity(city && CITY_PRESETS.some((option) => option.label === city) ? city : CITY_PRESETS[0].label);
+      const cityLabel = city && CITY_PRESETS.some((option) => option.label === city) ? city : CITY_PRESETS[0].label;
+      setSelectedCity(cityLabel);
+      setLocationInput(cityLabel);
     }
   }, [pathname, searchParams]);
+
+  useEffect(() => {
+    if (!showLocationSuggestions) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (locationRef.current && !locationRef.current.contains(e.target as Node)) {
+        setShowLocationSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLocationSuggestions]);
+
+  useEffect(() => {
+    getBrowserCoordinates()
+      .then(({ lat, lng }) => {
+        // Find nearest city preset label for the dropdown
+        let nearest = CITY_PRESETS[0];
+        let minDist = Infinity;
+        for (const preset of CITY_PRESETS) {
+          const dist = Math.hypot(lat - preset.lat, lng - preset.lng);
+          if (dist < minDist) { minDist = dist; nearest = preset; }
+        }
+        setSelectedCity(nearest.label);
+        setLocationInput(nearest.label);
+        setCoords({ lat, lng, label: nearest.label });
+      })
+      .catch(() => {/* permission denied — keep default */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleLocationInputChange(value: string) {
+    setLocationInput(value);
+    setShowLocationSuggestions(true);
+    const presetSuggestions = CITY_PRESETS
+      .filter((p) => p.label.toLowerCase().includes(value.toLowerCase()))
+      .map((p) => ({ label: p.label, city: p.label, lat: p.lat, lng: p.lng }));
+    setLocationSuggestions(presetSuggestions);
+    if (locationTimerRef.current) clearTimeout(locationTimerRef.current);
+    if (value.trim().length >= 2) {
+      locationTimerRef.current = setTimeout(async () => {
+        const results = await searchPlaces(value);
+        const extra = results
+          .map((r) => {
+            const city = r.address?.city ?? r.address?.town ?? r.address?.village ?? "";
+            if (!city) return null;
+            const label = [r.address?.suburb ?? r.address?.neighbourhood, city].filter(Boolean).join(", ");
+            return { label, city, lat: parseFloat(r.lat), lng: parseFloat(r.lon) };
+          })
+          .filter(Boolean) as Array<{ label: string; city: string; lat: number; lng: number }>;
+        const seen = new Set(presetSuggestions.map((p) => p.city.toLowerCase()));
+        const deduped = extra.filter((s) => !seen.has(s.city.toLowerCase()));
+        setLocationSuggestions([...presetSuggestions, ...deduped.slice(0, 4)]);
+      }, 400);
+    }
+  }
+
+  function handlePickLocation(suggestion: { label: string; city: string; lat?: number; lng?: number }) {
+    setLocationInput(suggestion.label);
+    setSelectedCity(suggestion.city);
+    setShowLocationSuggestions(false);
+    if (suggestion.lat != null && suggestion.lng != null) {
+      setCoords({ lat: suggestion.lat, lng: suggestion.lng, label: suggestion.label });
+    }
+  }
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -140,21 +213,31 @@ export function SiteHeader() {
               />
             </div>
             <div className="h-5 w-px bg-black/10 dark:bg-white/10" />
-            <div className="flex items-center gap-[6px] rounded-full px-3 py-[6px]">
-              <MapPin className="h-[14px] w-[14px] text-[#7A7A8C]" />
-              <select
-                className="border-0 bg-transparent pr-1 text-[13px] text-[#3D3D4E] outline-none dark:text-slate-200"
-                value={selectedCity}
-                onChange={(event) => {
-                  setSelectedCity(event.target.value);
-                }}
-              >
-                {CITY_PRESETS.map((city) => (
-                  <option key={city.label} value={city.label}>
-                    {city.label}, GB
-                  </option>
-                ))}
-              </select>
+            <div className="relative flex items-center gap-[6px] rounded-full px-3 py-[6px]" ref={locationRef}>
+              <MapPin className="h-[14px] w-[14px] shrink-0 text-[#7A7A8C]" />
+              <input
+                type="text"
+                value={locationInput}
+                onChange={(e) => handleLocationInputChange(e.target.value)}
+                onFocus={() => setShowLocationSuggestions(true)}
+                placeholder="Location"
+                className="w-[110px] border-0 bg-transparent text-[13px] text-[#3D3D4E] outline-none placeholder:text-[#7A7A8C] dark:text-slate-200"
+              />
+              {showLocationSuggestions && locationSuggestions.length > 0 && (
+                <div className="absolute left-0 top-full mt-2 z-50 min-w-[180px] overflow-hidden rounded-[14px] border border-black/8 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:border-white/10 dark:bg-[#17171f]">
+                  {locationSuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); handlePickLocation(s as { label: string; city: string; lat?: number; lng?: number }); }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[13px] text-[#3D3D4E] hover:bg-[#f9f7f5] dark:text-slate-300 dark:hover:bg-white/5"
+                    >
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-[#7A7A8C]" />
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <Button type="submit" size="icon" className="h-8 w-8 rounded-full bg-primary text-white shadow-none hover:bg-[#FF4D6A]">
               <Search className="h-[14px] w-[14px]" />

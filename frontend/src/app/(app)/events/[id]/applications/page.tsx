@@ -25,8 +25,9 @@ import {
   usePublishEvent,
   useToggleExpand,
 } from "@/features/events/api";
+import { useEventVenueRecommendations } from "@/features/packs/api";
 import { getErrorMessage } from "@/lib/api/errors";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { formatDate } from "@/lib/utils";
 import { SocialLinks } from "@/components/social-links";
 
@@ -44,16 +45,24 @@ export default function EventApplicationsPage() {
   const confirmVenue = useConfirmVenue(eventId);
   const lock = useLock(eventId);
   const cancel = useCancelEvent(eventId);
+  const venueRecsQuery = useEventVenueRecommendations(eventId, null);
   const event = eventQuery.data;
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [venueSearch, setVenueSearch] = useState("");
+  const [showVenueSuggestions, setShowVenueSuggestions] = useState(false);
+  const venueInputRef = useRef<HTMLInputElement>(null);
 
-  async function onConfirmVenue(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const venue_name = String(formData.get("venue_name") || "");
+  const allVenues = (venueRecsQuery.data ?? []).flatMap((g) => g.venues);
+  const filteredVenues = venueSearch.trim()
+    ? allVenues.filter((v) => v.name.toLowerCase().includes(venueSearch.toLowerCase()))
+    : allVenues;
+
+  async function onConfirmVenue(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!venueSearch.trim()) return;
     setSubmitError(null);
     try {
-      await confirmVenue.mutateAsync({ venue_name });
+      await confirmVenue.mutateAsync({ venue_name: venueSearch.trim() });
       toast.success("Venue confirmed.");
     } catch (error) {
       setSubmitError(getErrorMessage(error, "Unable to confirm venue."));
@@ -152,17 +161,43 @@ export default function EventApplicationsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="relative z-10">
         <CardHeader>
           <CardTitle>Venue confirmation</CardTitle>
+          {event?.venue_name ? (
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">Currently confirmed: <span className="font-medium">{event.venue_name}</span></p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <form onSubmit={onConfirmVenue} className="flex flex-col gap-3 md:flex-row">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="venue_name">Venue name</Label>
-              <Input id="venue_name" name="venue_name" placeholder="The rooftop room" />
+            <div className="relative flex-1 space-y-2">
+              <Label htmlFor="venue_name">Search venue</Label>
+              <Input
+                ref={venueInputRef}
+                id="venue_name"
+                value={venueSearch}
+                onChange={(e) => { setVenueSearch(e.target.value); setShowVenueSuggestions(true); }}
+                onFocus={() => setShowVenueSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowVenueSuggestions(false), 150)}
+                placeholder="Type to search venue recommendations…"
+                autoComplete="off"
+              />
+              {showVenueSuggestions && filteredVenues.length > 0 ? (
+                <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-2xl border border-border bg-background shadow-lg">
+                  {filteredVenues.map((v) => (
+                    <li
+                      key={v.id}
+                      className="cursor-pointer px-4 py-2.5 text-sm hover:bg-secondary"
+                      onMouseDown={() => { setVenueSearch(v.name); setShowVenueSuggestions(false); }}
+                    >
+                      <span className="font-medium">{v.name}</span>
+                      <span className="ml-2 text-muted-foreground">{v.city}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
-            <Button className="md:self-end" type="submit">
+            <Button className="md:self-end" type="submit" disabled={!venueSearch.trim() || confirmVenue.isPending}>
               Confirm venue
             </Button>
           </form>

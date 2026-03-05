@@ -1,3 +1,5 @@
+import math
+
 from django.contrib.gis.geos import Point
 from rest_framework import permissions, status
 from rest_framework import serializers
@@ -14,6 +16,7 @@ from apps.events.selectors import (
     get_event_application,
     get_event_by_id,
     get_event_for_host,
+    get_events_applied_to,
     get_events_for_host,
     get_feed_queryset,
     get_invites_for_host_event,
@@ -62,6 +65,19 @@ class EventCreateView(APIView):
         return Response(BirthdayEventReadSerializer(queryset, many=True, context={"request": request}).data)
 
 
+class EventAppliedView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        queryset = get_events_applied_to(request.user)
+        data = BirthdayEventReadSerializer(queryset, many=True, context={"request": request}).data
+        # Redact venue_name for events not yet locked/confirmed
+        for item in data:
+            if item.get("state") not in {BirthdayEvent.STATE_CONFIRMED, BirthdayEvent.STATE_LOCKED}:
+                item["venue_name"] = ""
+        return Response(data)
+
+
 @extend_schema_view(
     get=extend_schema(responses={200: BirthdayEventReadSerializer}),
     patch=extend_schema(request=BirthdayEventWriteSerializer, responses={200: BirthdayEventReadSerializer}),
@@ -72,10 +88,13 @@ class EventDetailView(APIView):
     def get(self, request, event_id):
         event = get_event_by_id(event_id)
         data = BirthdayEventReadSerializer(event, context={"request": request}).data
-        is_approved_attendee = request.user.is_authenticated and event.attendees.filter(user=request.user).exists()
-        if not request.user.is_authenticated or (request.user != event.host and not is_approved_attendee):
+        user_id = request.user.id if request.user.is_authenticated else None
+        is_host = user_id is not None and user_id == event.host_id
+        is_approved_attendee = not is_host and user_id is not None and event.attendees.filter(user_id=user_id).exists()
+        venue_visible = event.venue_status == BirthdayEvent.VENUE_CONFIRMED or event.state in {BirthdayEvent.STATE_CONFIRMED, BirthdayEvent.STATE_LOCKED}
+        if not is_host and not is_approved_attendee:
             data["venue_name"] = ""
-        elif event.state not in {BirthdayEvent.STATE_CONFIRMED, BirthdayEvent.STATE_LOCKED} and request.user != event.host:
+        elif not is_host and not venue_visible:
             data["venue_name"] = ""
         return Response(data)
 
@@ -319,6 +338,15 @@ class PackDetailView(APIView):
         return Response(CuratedPackReadSerializer(pack).data)
 
 
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    R = 6371
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return round(R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)), 1)
+
+
 @extend_schema_view(
     get=extend_schema(
         responses={
@@ -353,10 +381,25 @@ class EventVenueRecommendationsView(APIView):
         grouped = get_grouped_venue_recommendations(
             city=city,
             venue_categories=venue_categories,
-            neighborhood_tag=event.approx_area_label or None,
         )
-        payload = [
-            {"category": cat, "venues": VenuePartnerSerializer(venues, many=True).data}
-            for cat, venues in grouped.items()
-        ]
+
+        # Optional user coordinates for distance calculation
+        try:
+            user_lat = float(request.query_params["lat"])
+            user_lng = float(request.query_params["lng"])
+        except (KeyError, ValueError):
+            user_lat = user_lng = None
+
+        payload = []
+        for cat, venues in grouped.items():
+            serialized = VenuePartnerSerializer(venues, many=True).data
+            if user_lat is not None:
+                for i, venue in enumerate(venues):
+                    if venue.latitude is not None and venue.longitude is not None:
+                        serialized[i]["distance_km"] = _haversine_km(
+                            user_lat, user_lng, venue.latitude, venue.longitude
+                        )
+                    else:
+                        serialized[i]["distance_km"] = None
+            payload.append({"category": cat, "venues": serialized})
         return Response(payload)

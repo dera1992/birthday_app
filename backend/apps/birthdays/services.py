@@ -70,12 +70,23 @@ def moderate_support_message(message: SupportMessage, actor, status_value: str):
     return message
 
 
-def cancel_wishlist_reservation(item, actor):
+def cancel_wishlist_reservation(item, actor, message_body: str = ""):
     reservation = getattr(item, "reservation", None)
     if not reservation:
         raise ValidationError("Item has no active reservation.")
-    if item.profile.user != actor:
-        raise PermissionDenied("Only the profile owner can cancel a reservation.")
+    is_owner = item.profile.user_id == actor.id
+    is_reserver = bool(reservation.reserver_email and actor.email and reservation.reserver_email.lower() == actor.email.lower())
+    if not is_owner and not is_reserver:
+        raise PermissionDenied("Only the profile owner or the original reserver can cancel a reservation.")
+    if is_reserver and not is_owner:
+        body = message_body.strip() or f"I need to cancel my reservation for '{item.title}'."
+        SupportMessage.objects.create(
+            profile=item.profile,
+            author=actor,
+            sender_name=reservation.reserver_name or actor.email,
+            body=f"[Reservation cancelled — {item.title}]: {body}",
+            moderation_status=SupportMessage.MODERATION_PENDING,
+        )
     reservation.delete()
     item.is_reserved = False
     item.save(update_fields=["is_reserved"])

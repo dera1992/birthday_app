@@ -1,97 +1,145 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowRight,
-  CalendarRange,
-  CheckCheck,
-  ChevronRight,
-  Clock3,
-  CreditCard,
-  Gift,
-  Heart,
-  Map,
-  MapPinned,
-  Shield,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
-import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { DM_Sans, Fraunces } from "next/font/google";
 
 import { useAuth } from "@/features/auth/auth-context";
-import { useConnectStatus } from "@/features/connect/api";
 import { useEventFeed } from "@/features/events/api";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ErrorState, LoadingBlock } from "@/components/ui/state-block";
-import { CITY_PRESETS } from "@/lib/geo";
-import { getErrorMessage } from "@/lib/api/errors";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { useLocationContext } from "@/lib/location-context";
+import { formatCurrency } from "@/lib/utils";
 
-const stats = [
-  { label: "Protected escrow", value: "100%", note: "Funds release only after lock." },
-  { label: "Guest support", value: "1 link", note: "Wishlist, messages, and contributions." },
-  { label: "Host setup", value: "< 10 min", note: "Stripe Connect Express onboarding." },
+const display = Fraunces({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  weight: ["300", "700", "900"],
+});
+
+const bodyFont = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+});
+
+const trustItems = [
+  { value: "2,400+", label: "Birthdays hosted" },
+  { value: "100%", label: "Escrow-protected funds" },
+  { value: "4.9★", label: "Average host rating" },
+  { value: "12", label: "Cities and growing" },
+  { value: "£0", label: "Risk if event doesn't lock" },
 ];
 
-const verificationCards = [
+const heroCards = [
+  { emoji: "🍽️", title: "Rooftop Dinner · Shoreditch", meta: "14 guests · £45/head", pill: "Live", pillClass: "from-[#FF5C47] to-[#FF3D6B]" },
+  { emoji: "🎨", title: "Art Studio Evening · Brixton", meta: "8 guests · £35/head", pill: "Open", pillClass: "from-[#06D6A0] to-[#00A878]" },
+  { emoji: "⛵", title: "Thames Cruise · Central", meta: "20 guests · £75/head", pill: "5 spots", pillClass: "from-[#FFB347] to-[#FF8C42]" },
+];
+
+const steps = [
   {
-    title: "Phone verification",
-    description: "Verified and ready for event applications.",
+    step: "01",
+    title: "Create your birthday page",
+    description: "Set up your event in under 10 minutes. Add your venue idea, guest list, and wishlist. Share one link with everyone.",
+    circleClass: "border-[rgba(255,92,71,0.2)] bg-[rgba(255,92,71,0.08)] text-[#FF5C47]",
   },
   {
-    title: "Email verification",
-    description: "Optional globally, required by some events.",
+    step: "02",
+    title: "Guests commit and contribute",
+    description: "Friends RSVP, leave warm messages, and make contributions, all held safely in escrow until your event is confirmed.",
+    circleClass: "border-[rgba(255,179,71,0.25)] bg-[rgba(255,179,71,0.1)] text-[#D97706]",
+  },
+  {
+    step: "03",
+    title: "Lock and celebrate",
+    description: "Once your venue and guest minimum are met, funds release. If not, everyone is automatically refunded. Zero risk.",
+    circleClass: "border-[rgba(255,61,107,0.2)] bg-[rgba(255,61,107,0.08)] text-[#FF3D6B]",
   },
 ];
 
-const hostFeatures = [
-  {
-    icon: Clock3,
-    title: "Curated discovery",
-    description: "Map-led browsing with radius filters and premium event storytelling.",
-  },
-  {
-    icon: Heart,
-    title: "Support ecosystem",
-    description: "Wishlist reservations, warm birthday notes, and contribution flows in one place.",
-  },
-  {
-    icon: CreditCard,
-    title: "Protected payouts",
-    description: "Escrow-style release only after lock conditions are actually satisfied.",
-  },
+const hostPerks = [
+  { emoji: "🔒", title: "Escrow-protected payments", description: "Guest contributions are held safely until your venue and minimum headcount are both confirmed. No lock means a full refund to everyone." },
+  { emoji: "🎁", title: "Birthday wishlist built in", description: "Share exactly what you want. Guests can reserve gifts, leave warm messages, and contribute to group presents in one place." },
+  { emoji: "⚡", title: "Under 10 min to set up", description: "Stripe Connect Express onboarding. Be ready to collect contributions before you've even decided on a venue." },
+  { emoji: "📍", title: "Discoverable on the feed", description: "Public events appear on the map feed. Invite-only controls let you choose exactly who can request to join." },
 ];
+
+const testimonials = [
+  { before: "Finally, a birthday where I did not have to chase anyone for money or worry about ", emphasis: "who was actually coming.", after: "", name: "Sophia K.", role: "Hosted a rooftop dinner - London", avatar: "S", gradient: "from-[#FF6B9D] to-[#FF4D6A]" },
+  { before: "The escrow system gave me total peace of mind. ", emphasis: "Everything just worked.", after: " My guests loved the wishlist feature too.", name: "Marcus T.", role: "Hosted a boat party - Manchester", avatar: "M", gradient: "from-[#A855F7] to-[#7C3AED]" },
+  { before: "I was skeptical, but my 30th birthday was ", emphasis: "genuinely the best one I have had.", after: " I will never plan a birthday the old way again.", name: "Amara O.", role: "Attended a studio party - Birmingham", avatar: "A", gradient: "from-[#06D6A0] to-[#00A878]" },
+];
+
+const CATEGORY_GRADIENT: Record<string, string> = {
+  DINING: "from-[#FF6B9D] via-[#FF4D6A] to-[#FF8C42]",
+  NIGHTLIFE: "from-[#A855F7] via-[#7C3AED] to-[#4338CA]",
+  WELLNESS: "from-[#06D6A0] via-[#00A878] to-[#0891B2]",
+  OUTDOORS: "from-[#FFB347] via-[#FF8C42] to-[#FF5C47]",
+  CULTURE: "from-[#3B82F6] via-[#1D4ED8] to-[#6366F1]",
+};
+
+function formatDateOnly(date?: string | null) {
+  if (!date) return "TBC";
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+  }).format(new Date(date));
+}
+
+function SectionLabel({ children, centered = false, dark = false }: { children: React.ReactNode; centered?: boolean; dark?: boolean }) {
+  return (
+    <div className={["inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em]", dark ? "text-[#FF7A68]" : "text-[#FF5C47]", centered ? "justify-center" : ""].join(" ")}>
+      {centered ? null : <span className={`h-[2px] w-5 rounded-full ${dark ? "bg-[#FF7A68]" : "bg-[#FF5C47]"}`} />}
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function LandingFooter() {
+  const columns = [
+    { heading: "Product", links: [{ href: "/", label: "Overview" }, { href: "/events", label: "Events feed" }, { href: "/connect", label: "Host payouts" }, { href: "/register", label: "Get started" }] },
+    { heading: "Account", links: [{ href: "/login", label: "Sign in" }, { href: "/register", label: "Create account" }, { href: "/birthday-profile/new", label: "Birthday profile" }, { href: "/events/new", label: "Create event" }] },
+    { heading: "Company", links: [{ href: "/", label: "About" }, { href: "/", label: "Blog" }, { href: "/", label: "Careers" }, { href: "/", label: "Privacy policy" }] },
+  ];
+
+  return (
+    <footer className="bg-[#150A06] px-6 py-12 text-white md:px-10 lg:px-12">
+      <div className="mx-auto grid max-w-[1200px] gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div>
+          <Link href="/" className="inline-flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#FF5C47] to-[#FF3D6B] text-[11px] font-semibold text-white shadow-[0_4px_14px_rgba(255,92,71,0.4)]">CE</span>
+            <span className={`${display.className} text-[18px] font-bold`}>Birthday Experiences</span>
+          </Link>
+          <p className={`${bodyFont.className} mt-4 max-w-[240px] text-[13px] leading-6 text-white/40`}>
+            Curated birthday experiences, protected payments, and warm guest support.
+          </p>
+        </div>
+        {columns.map((column) => (
+          <div key={column.heading}>
+            <h3 className={`${bodyFont.className} text-[11px] font-bold uppercase tracking-[0.08em] text-white/35`}>{column.heading}</h3>
+            <div className="mt-5 space-y-3">
+              {column.links.map((link) => (
+                <Link key={link.label} href={link.href} className={`${bodyFont.className} block text-[14px] text-white/55 transition hover:text-white`}>
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className={`${bodyFont.className} mx-auto mt-8 flex max-w-[1200px] flex-col gap-2 text-[12px] text-white/25 md:flex-row md:items-center md:justify-between`}>
+        <p>(c) 2026 Birthday Experiences. All rights reserved.</p>
+        <p>Designed for warm celebrations with rigorous operations.</p>
+      </div>
+    </footer>
+  );
+}
 
 export default function HomePage() {
   const { isAuthenticated, isEmailVerified, isPhoneVerified, user } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const connectStatus = useConnectStatus(Boolean(isAuthenticated && user?.id));
-  const [landingCoords, setLandingCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const { coords: feedCoords } = useLocationContext();
 
-  useEffect(() => {
-    const lat = Number(searchParams.get("lat"));
-    const lng = Number(searchParams.get("lng"));
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      setLandingCoords({ lat, lng });
-      return;
-    }
-
-    const cityParam = searchParams.get("city");
-    const preset = CITY_PRESETS.find((city) => city.label === cityParam) ?? CITY_PRESETS[0];
-    setLandingCoords({ lat: preset.lat, lng: preset.lng });
-  }, [searchParams]);
-
-  const landingFeedQuery = useEventFeed({
-    lat: landingCoords?.lat,
-    lng: landingCoords?.lng,
-    radius: 8000,
-  });
-  const nearbyLandingEvents = (landingFeedQuery.data ?? []).slice(0, 4);
+  const feedQuery = useEventFeed({ lat: feedCoords.lat, lng: feedCoords.lng, radius: 10000 });
+  const liveEvents = (feedQuery.data ?? []).slice(0, 4);
 
   useEffect(() => {
     if (isAuthenticated && !isEmailVerified) {
@@ -100,537 +148,307 @@ export default function HomePage() {
     }
     if (isAuthenticated && !isPhoneVerified) {
       router.replace("/verify");
+      return;
     }
-  }, [isAuthenticated, isEmailVerified, isPhoneVerified, router]);
+    if (isAuthenticated) {
+      router.replace(user?.birthday_profile_slug ? `/birthday/${user.birthday_profile_slug}` : "/birthday-profile/new");
+    }
+  }, [isAuthenticated, isEmailVerified, isPhoneVerified, user, router]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("in");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll(".landing-reveal, .landing-stagger").forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
 
   if (isAuthenticated) {
-    const birthdayProfileReady = Boolean(user?.birthday_profile_completed);
-    const primaryHref = birthdayProfileReady ? "/events/new" : user?.birthday_profile_slug ? `/birthday-profile/${user.birthday_profile_slug}/edit` : "/birthday-profile/new";
-    const primaryLabel = birthdayProfileReady ? "Create event" : "Complete birthday profile";
-    const payoutsReady = Boolean(connectStatus.data?.connect_account?.payouts_enabled);
-    const firstName = user?.first_name || "Host";
-    return (
-      <div className="overflow-hidden rounded-[32px] border border-border/70 bg-[#f9f7f5] text-slate-950 shadow-[0_18px_80px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[#0f0f15] dark:text-white">
-        <section className="relative grid min-h-[calc(100vh-9rem)] overflow-hidden lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(232,41,74,0.12),transparent_38%),radial-gradient(circle_at_top_right,rgba(255,135,155,0.14),transparent_32%),radial-gradient(circle_at_bottom_center,rgba(232,41,74,0.06),transparent_28%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(232,41,74,0.18),transparent_36%),radial-gradient(circle_at_top_right,rgba(255,135,155,0.12),transparent_30%),radial-gradient(circle_at_bottom_center,rgba(232,41,74,0.12),transparent_28%)]" />
-          <div className="relative z-10 flex items-center px-6 py-16 md:px-10 lg:px-16 lg:py-[72px]">
-            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-              <div className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-                <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_0_6px_rgba(232,41,74,0.12)] animate-pulse" />
-                Dashboard
-              </div>
-              <h1 className="mt-8 max-w-[6.8ch] font-display text-[52px] font-extrabold leading-[0.92] tracking-[-0.05em] md:text-[68px]">
-                Keep your
-                <br />
-                birthday plans
-                <br />
-                <span className="bg-gradient-to-r from-primary to-rose-400 bg-clip-text text-transparent">ready.</span>
-              </h1>
-              <p className="mt-6 max-w-[420px] text-base leading-7 text-slate-600 dark:text-slate-300">
-                Welcome back, <span className="font-semibold text-slate-900 dark:text-white">{firstName}</span>. Manage event approvals, lock criteria,
-                and birthday support from one place.
-              </p>
-              <div className="mt-10 flex flex-wrap gap-3">
-                <Button asChild size="lg" className="rounded-full px-6 shadow-[0_10px_30px_rgba(232,41,74,0.35)]">
-                  <Link href={primaryHref}>
-                    {primaryLabel}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="rounded-full border-border/70 bg-white px-6 shadow-sm dark:bg-white/5">
-                  <Link href="/events">Open feed</Link>
-                </Button>
-              </div>
-              <Link
-                href="/connect"
-                className="mt-12 inline-flex w-fit items-center gap-4 rounded-full border border-border/70 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <CreditCard className="h-4 w-4" />
-                </span>
-                <span className="text-left">
-                  <span className="block text-sm font-semibold text-slate-900 dark:text-white">Payout readiness</span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400">Connect required before first paid event</span>
-                </span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-white dark:bg-white dark:text-slate-950">
-                  <ChevronRight className="h-4 w-4" />
-                </span>
-              </Link>
-            </motion.div>
-          </div>
-
-          <div className="relative z-10 flex flex-col justify-center gap-4 bg-[#111118] px-6 py-12 text-white md:px-10 lg:px-10 lg:py-16">
-            <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.25 }}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/35">Account status</p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.45, delay: 0.32 }}
-              className="flex items-center justify-between rounded-[22px] border border-white/10 bg-white/5 px-5 py-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-sm font-bold text-white">
-                  {firstName.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-semibold">{firstName}</p>
-                  <p className="text-xs text-white/45">{birthdayProfileReady ? "Profile ready" : "Profile incomplete"}</p>
-                </div>
-              </div>
-              <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${birthdayProfileReady ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border border-amber-400/30 bg-amber-400/10 text-amber-300"}`}>
-                {birthdayProfileReady ? "Ready" : "Action needed"}
-              </span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.45, delay: 0.39 }}
-              className="overflow-hidden rounded-[24px] bg-primary p-7"
-            >
-              <h2 className="text-lg font-bold tracking-tight">Refund guarantee</h2>
-              <p className="mt-3 text-sm leading-6 text-white/80">
-                If venue confirmation or minimum guests are not met before lock, the backend auto-cancels and refunds all held escrow to guests.
-              </p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.45, delay: 0.46 }}
-              className="grid grid-cols-3 gap-3"
-            >
-              {stats.map((stat, index) => (
-                <div key={stat.label} className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-5 text-center">
-                  <p className={`font-display text-[30px] font-extrabold tracking-[-0.05em] ${index === 0 ? "text-rose-300" : "text-white"}`}>{stat.value}</p>
-                  <p className="mt-2 text-[11px] leading-4 text-white/40">{stat.label}</p>
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        <div className="bg-white px-6 py-16 dark:bg-[#0f0f15] md:px-10 lg:px-16 lg:py-20">
-          <motion.section
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.45 }}
-            className="mb-16"
-          >
-            <div>
-              <div className="inline-flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-                <span className="h-0.5 w-4 rounded-full bg-primary" />
-                Ready to apply
-              </div>
-              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-[-0.04em] md:text-4xl">Account verification</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-                Verify your details so you can apply instantly when you find the right celebration.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {verificationCards.map((item, index) => (
-                <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 22 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={{ duration: 0.4, delay: index * 0.08 }}
-                  className="rounded-[22px] border border-border/70 bg-[#fcfbfa] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:text-emerald-400">
-                      <CheckCheck className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold tracking-[-0.02em]">{item.title}</h3>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.description}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-
-          <section className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
-            <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.18 }} transition={{ duration: 0.45 }}>
-              <div className="inline-flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-                <span className="h-0.5 w-4 rounded-full bg-primary" />
-                Built for birthday hosts
-              </div>
-              <h2 className="mt-4 max-w-xl font-display text-3xl font-extrabold tracking-[-0.04em] md:text-4xl">
-                Beautiful planning deserves payment safety and guest warmth.
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-                Launch your birthday page, curate experience-led events, and keep every guest payment protected until your venue and threshold are truly ready.
-              </p>
-              <div className="mt-8">
-                {hostFeatures.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <motion.div
-                      key={item.title}
-                      initial={{ opacity: 0, y: 18 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.2 }}
-                      transition={{ duration: 0.38, delay: index * 0.07 }}
-                      className="flex gap-4 border-b border-border/70 py-6 last:border-b-0 dark:border-white/10"
-                    >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold tracking-[-0.02em]">{item.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{item.description}</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.18 }}
-              transition={{ duration: 0.45, delay: 0.08 }}
-              className="space-y-4 lg:sticky lg:top-24"
-            >
-              <div className="overflow-hidden rounded-[28px] bg-[#111118] p-8 text-white shadow-[0_20px_60px_rgba(15,23,42,0.28)]">
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/35">
-                  <Shield className="h-4 w-4" />
-                  Refund Guarantee
-                </div>
-                <h3 className="mt-5 font-display text-3xl font-extrabold tracking-[-0.04em]">
-                  If the celebration does not lock, <span className="text-rose-300">held payments do not drift.</span>
-                </h3>
-                <p className="mt-4 text-sm leading-7 text-white/55">
-                  Pre-lock funds stay protected until venue confirmation and guest minimums are met. This is enforced backend flow, not a promise.
-                </p>
-              </div>
-
-              <div className="rounded-[24px] border border-border/70 bg-[#fcfbfa] p-7 shadow-sm dark:border-white/10 dark:bg-white/5">
-                <h3 className="text-xl font-bold tracking-[-0.03em]">Start hosting your birthday</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
-                  Stripe Connect Express onboarding takes under 10 minutes. Be ready to collect before the cake is ordered.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Button asChild className="rounded-full px-5">
-                    <Link href={primaryHref}>
-                      {primaryLabel}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="rounded-full">
-                    <Link href="/pricing">See plans</Link>
-                  </Button>
-                </div>
-                <div className="mt-5 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
-                  {payoutsReady ? "Connect payouts are already enabled." : "Connect payouts still need to be enabled before your first paid lock."}
-                </div>
-              </div>
-            </motion.div>
-          </section>
-        </div>
-
-      </div>
-    );
+    return <main className="min-h-[50vh] bg-[#FFF8F3]" />;
   }
 
   return (
-    <main>
-      <section className="relative grid min-h-screen overflow-hidden bg-[#F9F7F5] lg:grid-cols-[minmax(0,1fr)_440px] dark:bg-[#0f0f15]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_650px_550px_at_-8%_55%,rgba(232,41,74,0.07)_0%,transparent_65%),radial-gradient(ellipse_450px_450px_at_108%_5%,rgba(255,160,170,0.11)_0%,transparent_60%)] dark:bg-[radial-gradient(ellipse_650px_550px_at_-8%_55%,rgba(232,41,74,0.14)_0%,transparent_65%),radial-gradient(ellipse_450px_450px_at_108%_5%,rgba(255,160,170,0.1)_0%,transparent_60%)]" />
+    <>
+      <main className={`${bodyFont.className} bg-[#FFF8F3] text-[#1A0F0A]`}>
+        <section className="relative isolate flex min-h-screen items-center overflow-hidden bg-[#FFF8F3] px-6 pb-20 pt-[120px] text-center md:px-10 lg:px-12">
+          <div className="hero-orb absolute left-[-150px] top-[-150px] h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgba(255,92,71,0.18)_0%,transparent_70%)] blur-[80px]" />
+          <div className="hero-orb absolute right-[-100px] top-[-100px] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,179,71,0.14)_0%,transparent_70%)] blur-[80px]" />
+          <div className="hero-orb-reverse absolute bottom-0 left-[40%] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(255,61,107,0.1)_0%,transparent_70%)] blur-[80px]" />
 
-        <div className="relative z-10 flex flex-col justify-center px-6 pb-16 pt-[92px] md:px-10 lg:px-16 lg:pb-20 lg:pt-[80px] xl:pl-[72px]">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold text-[#7A7A8C] shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-white/5 dark:text-white/55">
-              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              Birthday Experiences · Support
-            </div>
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.08 }}
-            className="mt-7 max-w-[540px] font-display text-[42px] font-extrabold leading-[1.06] tracking-[-0.04em] text-[#111118] md:text-[58px] dark:text-white"
-          >
-            A premium birthday platform for curated events, protected payments, and guest support.
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.16 }}
-            className="mt-5 max-w-[420px] text-base leading-7 text-[#7A7A8C] dark:text-white/45"
-          >
-            Launch invite-led birthday experiences, collect support beautifully, and keep every payment protected until the plan is truly locked.
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.24 }} className="mt-9 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="rounded-full px-7 text-[15px] font-bold shadow-[0_6px_24px_rgba(232,41,74,0.38)] hover:-translate-y-0.5 hover:bg-[#FF3D5A]">
-              <Link href="/register">
-                Start hosting
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full border-black/10 bg-white px-6 text-[15px] font-medium text-[#3D3D4E] shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.05)] hover:border-primary/20 hover:text-primary dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/10 dark:hover:text-white">
-              <Link href="/events">Open feed</Link>
-            </Button>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.32 }}
-            className="mt-12 flex flex-col gap-8 md:flex-row md:items-stretch md:gap-0"
-          >
-            {stats.map((stat, index) => (
-              <div key={stat.label} className="flex items-stretch">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#7A7A8C] dark:text-white/35">{stat.label}</p>
-                  <p className="mt-2 font-display text-[30px] font-extrabold leading-none tracking-[-0.04em] text-[#111118] dark:text-white">{stat.value}</p>
-                  <p className="mt-1 text-xs text-[#7A7A8C] dark:text-white/38">{stat.note}</p>
-                </div>
-                {index < stats.length - 1 ? <div className="ml-8 hidden h-full min-h-[48px] w-px bg-black/10 md:block dark:bg-white/10" /> : null}
+          <div className="relative z-10 mx-auto flex w-full max-w-[820px] flex-col items-center">
+            <div className="hero-badge inline-flex w-fit items-center gap-3 rounded-full border border-[rgba(255,92,71,0.12)] bg-white px-4 py-2 shadow-[0_2px_16px_rgba(255,92,71,0.12)]">
+              <div className="flex">
+                {[
+                  { label: "S", className: "from-[#FF6B9D] to-[#FF4D6A]" },
+                  { label: "M", className: "from-[#FFB347] to-[#FF8C42]" },
+                  { label: "A", className: "from-[#A855F7] to-[#7C3AED]" },
+                ].map((avatar, index) => (
+                  <span key={avatar.label} className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br ${avatar.className} text-[11px] font-bold text-white ${index === 0 ? "" : "-ml-2"}`}>{avatar.label}</span>
+                ))}
               </div>
-            ))}
-          </motion.div>
-        </div>
+              <p className="text-[13px] font-medium text-[#4A2E24]"><span className="font-bold text-[#FF5C47]">2,400+</span> birthdays celebrated this year</p>
+            </div>
 
-        <div className="relative z-10 flex flex-col gap-4 overflow-hidden bg-[#111118] px-6 pb-16 pt-[92px] md:px-10 lg:px-11 lg:pb-[72px] lg:pt-[72px]">
-          <div className="pointer-events-none absolute -right-[60px] -top-[60px] h-[240px] w-[240px] rounded-full bg-[radial-gradient(circle,rgba(232,41,74,0.2)_0%,transparent_70%)]" />
-          <div className="pointer-events-none absolute -bottom-[50px] -left-[40px] h-[180px] w-[180px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
-          <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.3 }} className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/30">Live operations</span>
-            <span className="flex items-center gap-2 text-[11px] font-semibold text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              Refund-safe
-            </span>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.38 }} className="relative overflow-hidden rounded-[24px] bg-primary p-7">
-            <div className="absolute -right-7 -top-7 h-28 w-28 rounded-full bg-white/10" />
-            <p className="relative z-10 text-[10px] font-bold uppercase tracking-[0.1em] text-white/65">Host board</p>
-            <h2 className="relative z-10 mt-3 text-[22px] font-bold tracking-[-0.02em] text-white">{`Rooftop Dinner · 6 approved`}</h2>
-            <p className="relative z-10 mt-2 text-[13px] leading-6 text-white/70">Venue pending, escrow held, strangers expansion off.</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45, delay: 0.46 }} className="flex flex-col gap-3">
-            {[
-              {
-                icon: Heart,
-                title: "Protected payouts",
-                body: "Venue confirmation and guest thresholds enforced before release.",
-              },
-              {
-                icon: Gift,
-                title: "Guest birthday page",
-                body: "Collect gifts, notes, and contributions on a public birthday page.",
-              },
-              {
-                icon: ShieldCheck,
-                title: "Host trust suite",
-                body: "Verification, blocking, reporting, and post-event ratings built in.",
-              },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="flex gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 transition hover:bg-white/10">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-rose-300">
-                    <Icon className="h-4 w-4" />
+            <h1 className={`${display.className} mt-9 max-w-[820px] text-[clamp(52px,7vw,96px)] font-black leading-[0.96] tracking-[-0.04em] text-[#1A0F0A]`}>
+              Your birthday,
+              <br />
+              <em className="bg-[linear-gradient(120deg,#FF5C47_0%,#FF3D6B_50%,#FFB347_100%)] bg-clip-text font-light italic text-transparent">done right.</em>
+            </h1>
+
+            <p className="mt-7 max-w-[520px] text-[18px] font-light leading-[1.7] text-[#9A7A70]">Curated experiences, protected payments, and warm guest support, all in one place built for the birthday you actually deserve.</p>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF5C47,#FF3D6B)] px-9 py-4 text-[16px] font-semibold text-white shadow-[0_8px_32px_rgba(255,92,71,0.42)] transition hover:-translate-y-[3px] hover:shadow-[0_14px_44px_rgba(255,92,71,0.5)]">Plan my birthday</Link>
+              <Link href="/events" className="inline-flex items-center justify-center rounded-full border-[1.5px] border-[rgba(26,15,10,0.12)] bg-white px-8 py-4 text-[16px] font-medium text-[#1A0F0A] shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:border-[#FF5C47] hover:text-[#FF5C47]">Browse events</Link>
+            </div>
+
+            <div className="mt-16 flex flex-wrap justify-center gap-4">
+              {heroCards.map((card, index) => (
+                <div key={card.title} className={`hero-card-${index + 1} flex items-center gap-4 rounded-[20px] border border-white/80 bg-white px-5 py-[18px] shadow-[0_8px_32px_rgba(26,15,10,0.1)]`}>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#FFF2EA] text-xl">{card.emoji}</span>
+                  <div className="text-left">
+                    <p className="text-[13px] font-semibold text-[#1A0F0A]">{card.title}</p>
+                    <p className="text-[11px] text-[#9A7A70]">{card.meta}</p>
                   </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-white">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-white/45">{item.body}</p>
-                  </div>
+                  <span className={`rounded-full bg-gradient-to-br ${card.pillClass} px-3 py-1 text-[10px] font-bold uppercase tracking-[0.06em] text-white`}>{card.pill}</span>
                 </div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
-
-      <motion.section
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.12 }}
-        transition={{ duration: 0.55 }}
-        className="bg-[#F9F7F5] px-6 py-20 md:px-10 dark:bg-[#0f0f15]"
-      >
-        <div className="mx-auto grid max-w-[1160px] gap-5 lg:grid-cols-3">
-          {[
-            { icon: Users, title: "Guest support", body: "Moderated birthday messages, contribution flows, and reservation-safe wishlists." },
-            { icon: Map, title: "Curated feed", body: "Map-led discovery, invite-only expansion controls, and premium event storytelling." },
-            { icon: ShieldCheck, title: "Operational trust", body: "Stripe Connect, escrow release on lock, and auto-cancel deadline enforcement." },
-          ].map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.16 }}
-                transition={{ duration: 0.45, delay: index * 0.1 }}
-                className="rounded-[24px] border border-black/10 bg-white p-8 shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.05)] transition hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_4px_8px_rgba(0,0,0,0.04),0_16px_48px_rgba(0,0,0,0.1)] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-5 text-lg font-bold tracking-[-0.02em] text-[#111118] dark:text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-[#7A7A8C] dark:text-slate-300">{item.body}</p>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.section>
-
-      <motion.section
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.12 }}
-        transition={{ duration: 0.55 }}
-        className="bg-[#F9F7F5] px-6 pb-20 md:px-10 dark:bg-[#0f0f15]"
-      >
-        <div className="mx-auto max-w-[1160px]">
-          <div className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-primary">Nearby events</div>
-          <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.1] tracking-[-0.04em] text-[#111118] md:text-[44px] dark:text-white">
-            See what is happening around you
-          </h2>
-          <p className="mt-3 max-w-[520px] text-[15px] leading-7 text-[#7A7A8C] dark:text-white/45">
-            Public birthday events in your area appear here first. Open one to review the host, the plan, and contribution expectations before you show interest.
-          </p>
-
-          {landingFeedQuery.isLoading ? <LoadingBlock message="Loading nearby birthday events..." className="mt-10 min-h-[240px]" /> : null}
-          {landingFeedQuery.error ? (
-            <ErrorState
-              description={getErrorMessage(landingFeedQuery.error, "Unable to load nearby events right now.")}
-              className="mt-10 min-h-[240px]"
-            />
-          ) : null}
-          {!landingFeedQuery.isLoading && !landingFeedQuery.error && nearbyLandingEvents.length > 0 ? (
-            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {nearbyLandingEvents.map((event) => (
-                <Card key={event.id} className="rounded-[24px] border border-black/10 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-white/5">
-                  <CardHeader>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge>{event.category}</Badge>
-                      <Badge variant="outline">{event.distance_meters ? `${Math.round(event.distance_meters)}m away` : event.approx_area_label}</Badge>
-                    </div>
-                    <CardTitle className="pt-3 text-2xl">{event.title}</CardTitle>
-                    <CardDescription>{event.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>{formatDate(event.start_at)}</p>
-                      <p>{event.approx_area_label}</p>
-                      <p>
-                        {event.approved_count}/{event.max_guests} approved
-                      </p>
-                    </div>
-                    <div className="rounded-[20px] border border-border/70 bg-background/70 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Per guest</p>
-                      <p className="mt-2 font-display text-3xl">{formatCurrency(event.amount, event.currency)}</p>
-                    </div>
-                    <Button asChild className="w-full rounded-full">
-                      <Link href={`/events/${event.id}`}>View event</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
               ))}
             </div>
-          ) : null}
-          {!landingFeedQuery.isLoading && !landingFeedQuery.error && nearbyLandingEvents.length === 0 ? (
-            <div className="mt-10 rounded-[32px] border border-black/10 bg-white px-10 py-[72px] text-center shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.05)] dark:border-white/10 dark:bg-white/5">
-              <div className="text-5xl opacity-30">🎂</div>
-              <p className="mt-5 text-lg font-semibold text-[#111118] dark:text-white">No nearby events yet</p>
-              <p className="mx-auto mt-2 max-w-[360px] text-sm leading-7 text-[#7A7A8C] dark:text-white/45">
-                Switch city fallback or explore the full event feed once hosts in your area start publishing.
-              </p>
-              <Button asChild variant="outline" className="mt-7 rounded-full border-black/10 bg-white px-6 text-[#3D3D4E] shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.05)] hover:border-primary/20 hover:text-primary dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:border-white/25 dark:hover:bg-white/10 dark:hover:text-white">
-                <Link href="/events">Open full feed</Link>
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      </motion.section>
-
-      <motion.section
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.1 }}
-        transition={{ duration: 0.55 }}
-        className="relative overflow-hidden bg-[#111118] py-24"
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_700px_500px_at_80%_50%,rgba(232,41,74,0.1)_0%,transparent_70%),radial-gradient(ellipse_400px_400px_at_10%_80%,rgba(255,107,107,0.07)_0%,transparent_70%)]" />
-        <div className="relative z-10 mx-auto grid max-w-[1160px] gap-16 px-6 md:px-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
-          <div>
-            <div className="mb-6 flex flex-wrap gap-3">
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.07em] text-white/50">
-                Built for modern birthday hosts
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.07em] text-white/50">
-                Celebration-first
-              </span>
-            </div>
-            <h2 className="max-w-[480px] font-display text-[32px] font-extrabold leading-[1.15] tracking-[-0.03em] text-white md:text-[42px]">
-              Beautiful birthday planning deserves payment safety, guest warmth, and operational clarity.
-            </h2>
-            <p className="mt-5 max-w-[440px] text-[15px] leading-8 text-white/50">
-              Launch a premium birthday page, curate experience-led events, and keep every guest payment protected until your venue and guest threshold are truly ready.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full bg-white px-7 text-[15px] font-bold text-[#111118] shadow-[0_6px_24px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 hover:bg-white">
-                <Link href="/register">Start hosting</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-white/20 bg-transparent px-6 text-[15px] font-medium text-white hover:border-white/50 hover:bg-transparent">
-                <Link href="/pricing">See plans</Link>
-              </Button>
-            </div>
-            <div className="mt-14 grid gap-5 md:grid-cols-3">
-              {[
-                {
-                  icon: MapPinned,
-                  title: "Curated discovery",
-                  body: "Map-led browsing with radius filters and premium event storytelling.",
-                },
-                {
-                  icon: Heart,
-                  title: "Support ecosystem",
-                  body: "Wishlist reservations, warm birthday notes, and contribution flows.",
-                },
-                {
-                  icon: CreditCard,
-                  title: "Protected payouts",
-                  body: "Escrow-style release only after lock conditions are satisfied.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.title}>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/5 text-white/50">
-                      <Icon className="h-[18px] w-[18px]" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-white">{item.title}</p>
-                    <p className="mt-2 text-xs leading-6 text-white/40">{item.body}</p>
-                  </div>
-                );
-              })}
-            </div>
           </div>
+        </section>
 
-          <div className="flex flex-col gap-4">
-            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-9">
-              <div className="absolute -bottom-12 -right-12 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(232,41,74,0.2)_0%,transparent_70%)]" />
-              <div className="relative z-10 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-white/30">
-                <CalendarRange className="h-3.5 w-3.5" />
-                Refund Guarantee
+        <section className="bg-[#1A0F0A] px-6 py-7 text-white md:px-10 lg:px-12">
+          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-6 lg:gap-10">
+            {trustItems.map((item, index) => (
+              <div key={item.label} className="flex items-center gap-6">
+                <div>
+                  <p className={`${display.className} text-[24px] font-bold text-white`}>{item.value}</p>
+                  <p className="text-[13px] text-white/50">{item.label}</p>
+                </div>
+                {index < trustItems.length - 1 ? <span className="hidden h-9 w-px bg-white/10 lg:block" /> : null}
               </div>
-              <h3 className="relative z-10 mt-4 font-display text-3xl font-extrabold leading-[1.25] tracking-[-0.03em] text-white">
-                If the celebration does not lock properly, held payments <span className="text-rose-400">do not drift.</span>
-              </h3>
-              <p className="relative z-10 mt-4 text-sm leading-7 text-white/40">
-                Pre-lock funds remain protected until venue confirmation and guest minimums are met. That is not marketing copy; it is an enforced backend flow.
-              </p>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1200px] px-6 py-[120px] md:px-10 lg:px-12">
+          <div className="landing-reveal">
+            <SectionLabel>How it works</SectionLabel>
+            <h2 className={`${display.className} mt-5 max-w-[760px] text-[clamp(34px,4vw,54px)] font-bold leading-[1.1] tracking-[-0.03em]`}>
+              Three steps to an <em className="font-light italic text-[#FF5C47]">unforgettable</em> birthday
+            </h2>
+            <p className="mt-4 max-w-[480px] text-[16px] font-light leading-[1.7] text-[#9A7A70]">No awkward bank transfers, no chasing people for money, no stress. Just a beautiful birthday that comes together effortlessly.</p>
+          </div>
+
+          <div className="landing-stagger relative mt-[72px] grid gap-10 md:grid-cols-3">
+            <div className="pointer-events-none absolute left-[calc(16.67%+32px)] right-[calc(16.67%+32px)] top-9 hidden border-t-2 border-dashed border-[rgba(255,92,71,0.25)] md:block" />
+            {steps.map((step) => (
+              <div key={step.title} className="px-2 text-center md:px-8">
+                <div className={`relative z-10 mx-auto mb-7 flex h-[72px] w-[72px] items-center justify-center rounded-full border-2 text-[15px] font-bold tracking-tight ${step.circleClass}`}>{step.step}</div>
+                <h3 className="text-[18px] font-semibold tracking-[-0.01em] text-[#1A0F0A]">{step.title}</h3>
+                <p className="mt-3 text-[14px] font-light leading-[1.65] text-[#9A7A70]">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Events near you — live data */}
+        <section className="mx-auto max-w-[1200px] px-6 pb-[120px] md:px-10 lg:px-12">
+          <div className="landing-reveal flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <SectionLabel>Happening now</SectionLabel>
+              <h2 className={`${display.className} mt-5 text-[clamp(34px,4vw,54px)] font-bold leading-[1.1] tracking-[-0.03em]`}>
+                Events <em className="font-light italic text-[#FF5C47]">near you</em>
+              </h2>
+            </div>
+            <Link href="/events" className="inline-flex w-fit items-center rounded-full border-[1.5px] border-[rgba(255,92,71,0.12)] px-5 py-2.5 text-[14px] font-medium text-[#4A2E24] transition hover:border-[#FF5C47] hover:text-[#FF5C47]">See all events {"->"}</Link>
+          </div>
+
+          <div className="mt-12">
+            {feedQuery.isLoading && (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="animate-pulse overflow-hidden rounded-[24px] bg-[#f0ebe5]">
+                    <div className="h-[190px] bg-[#e0d9d2]" />
+                    <div className="space-y-3 p-[22px]">
+                      <div className="h-3 w-1/3 rounded-full bg-[#e0d9d2]" />
+                      <div className="h-4 w-3/4 rounded-full bg-[#e0d9d2]" />
+                      <div className="h-3 w-1/2 rounded-full bg-[#e0d9d2]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!feedQuery.isLoading && liveEvents.length === 0 && (
+              <div className="rounded-[28px] border border-[rgba(26,15,10,0.06)] bg-white px-10 py-[72px] text-center shadow-[0_4px_20px_rgba(26,15,10,0.06)]">
+                <p className="text-5xl opacity-30">🎂</p>
+                <p className="mt-5 text-[18px] font-semibold text-[#1A0F0A]">No events near you yet</p>
+                <p className="mx-auto mt-2 max-w-[360px] text-[14px] font-light leading-[1.7] text-[#9A7A70]">Be the first to host a birthday experience in your city.</p>
+                <Link href="/register" className="mt-7 inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF5C47,#FF3D6B)] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_6px_20px_rgba(255,92,71,0.35)] transition hover:-translate-y-0.5">
+                  Start hosting
+                </Link>
+              </div>
+            )}
+
+            {!feedQuery.isLoading && liveEvents.length > 0 && (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {liveEvents.map((event) => {
+                  const gradient = CATEGORY_GRADIENT[event.category] ?? "from-[#FF6B9D] via-[#FF4D6A] to-[#FF8C42]";
+                  const spotsLeft = event.max_guests - event.approved_count;
+                  const statusLabel = spotsLeft <= 3 ? `${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} left` : event.state === "OPEN" ? "Open" : event.state;
+
+                  return (
+                    <Link
+                      key={event.id}
+                      href={`/events/${event.id}`}
+                      className="overflow-hidden rounded-[24px] border border-[rgba(26,15,10,0.06)] bg-white shadow-[0_4px_24px_rgba(26,15,10,0.07)] transition hover:-translate-y-[5px] hover:shadow-[0_16px_48px_rgba(26,15,10,0.13)]"
+                    >
+                      <div className={`flex h-[190px] items-center justify-center bg-gradient-to-br ${gradient}`}>
+                        <span className="rounded-[18px] border border-white/15 bg-white/10 px-5 py-3 text-[12px] font-bold uppercase tracking-[0.12em] text-white">
+                          {event.category.slice(0, 2)}
+                        </span>
+                      </div>
+                      <div className="p-[30px]">
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full bg-[rgba(255,92,71,0.1)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.06em] text-[#FF5C47]">{event.category}</span>
+                        </div>
+                        <h3 className={`${display.className} mt-4 text-[16px] font-bold tracking-[-0.02em] text-[#1A0F0A] md:text-[18px]`}>{event.title}</h3>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-[#9A7A70]">
+                          {[formatDateOnly(event.start_at), event.approx_area_label, event.amount ? `${formatCurrency(event.amount, event.currency)}/head` : "Free"].map((item, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              {i > 0 ? <span className="h-[3px] w-[3px] rounded-full bg-[#9A7A70]" /> : null}
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-5 flex items-center justify-between gap-3">
+                          <span className="text-[12px] text-[#9A7A70]">{event.approved_count} attending</span>
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#FF5C47]">
+                            <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-[#FF5C47]" />
+                            {statusLabel}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden bg-[#150A06] px-6 py-[120px] text-white md:px-10 lg:px-12">
+          <div className="pointer-events-none absolute right-[-100px] top-[-100px] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,92,71,0.14)_0%,transparent_70%)]" />
+          <div className="pointer-events-none absolute bottom-[-80px] left-[10%] h-[350px] w-[350px] rounded-full bg-[radial-gradient(circle,rgba(255,179,71,0.08)_0%,transparent_70%)]" />
+
+          <div className="landing-reveal relative z-10 mx-auto grid max-w-[1200px] gap-14 lg:grid-cols-[1fr_1fr] lg:gap-20">
+            <div>
+              <SectionLabel dark>For birthday hosts</SectionLabel>
+              <h2 className={`${display.className} mt-5 max-w-[580px] text-[clamp(36px,4vw,56px)] font-bold leading-[1.1] tracking-[-0.03em] text-white`}>
+                Host the birthday <em className="font-light italic text-[#FF7A68]">you've always wanted</em>
+              </h2>
+              <p className="mt-5 max-w-[520px] text-[16px] font-light leading-[1.7] text-white/45">No chasing bank transfers. No awkward group chats. Just a beautiful page, a trusted payment system, and people who actually show up.</p>
+              <div className="mt-10 flex flex-wrap gap-3">
+                <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF5C47,#FF3D6B)] px-8 py-3.5 text-[15px] font-semibold text-white shadow-[0_6px_24px_rgba(255,92,71,0.4)] transition hover:-translate-y-0.5">Start hosting free</Link>
+                <Link href="/connect" className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-[15px] font-medium text-white transition hover:bg-white/10">See how payouts work</Link>
+              </div>
+            </div>
+
+            <div className="landing-stagger space-y-4">
+              {hostPerks.map((perk) => (
+                <div key={perk.title} className="flex gap-4 rounded-[18px] border border-white/10 bg-white/[0.04] px-6 py-6 transition hover:border-[rgba(255,92,71,0.2)] hover:bg-white/[0.07]">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,rgba(255,92,71,0.2),rgba(255,61,107,0.1))] text-xl">{perk.emoji}</span>
+                  <div>
+                    <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-white">{perk.title}</h3>
+                    <p className="mt-1.5 text-[13px] leading-[1.6] text-white/45">{perk.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </motion.section>
-    </main>
+        </section>
+
+        <section className="bg-[#FFF2EA] px-6 py-[120px] md:px-10 lg:px-12">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="landing-reveal text-center">
+              <SectionLabel centered>From the community</SectionLabel>
+              <h2 className={`${display.className} mt-5 text-[clamp(34px,4vw,54px)] font-bold leading-[1.1] tracking-[-0.03em]`}>
+                People who celebrated <em className="font-light italic text-[#FF5C47]">differently</em>
+              </h2>
+            </div>
+
+            <div className="landing-stagger mt-16 grid gap-5 lg:grid-cols-3">
+              {testimonials.map((testimonial) => (
+                <article key={testimonial.name} className="rounded-[24px] border border-[rgba(26,15,10,0.06)] bg-white p-8 shadow-[0_4px_20px_rgba(26,15,10,0.06)] transition hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(26,15,10,0.1)]">
+                  <p className="text-[14px] tracking-[2px] text-[#FFB347]">5/5</p>
+                  <p className={`${display.className} mt-5 text-[18px] font-bold leading-[1.4] tracking-[-0.02em] text-[#1A0F0A]`}>
+                    &ldquo;{testimonial.before}<em className="font-light italic text-[#FF5C47]">{testimonial.emphasis}</em>{testimonial.after}&rdquo;
+                  </p>
+                  <div className="mt-6 flex items-center gap-3">
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${testimonial.gradient} text-[14px] font-bold text-white`}>{testimonial.avatar}</span>
+                    <div>
+                      <p className="text-[14px] font-semibold text-[#1A0F0A]">{testimonial.name}</p>
+                      <p className="text-[12px] text-[#9A7A70]">{testimonial.role}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-reveal relative overflow-hidden bg-[#FFF8F3] px-6 py-[120px] text-center md:px-10 lg:px-12">
+          <div className="pointer-events-none absolute left-[10%] top-[10%] h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(255,179,71,0.1)_0%,transparent_70%)]" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,92,71,0.1)_0%,transparent_70%)]" />
+
+          <div className="relative z-10 mx-auto max-w-[860px]">
+            <span className="emoji-pop inline-flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white/70 text-[14px] font-bold uppercase tracking-[0.12em] text-[#FF5C47] shadow-[0_8px_24px_rgba(255,92,71,0.18)]">GO</span>
+            <h2 className={`${display.className} mt-8 text-[clamp(40px,6vw,80px)] font-black leading-[1] tracking-[-0.04em]`}>
+              Your next birthday
+              <br />
+              <em className="bg-[linear-gradient(120deg,#FF5C47_0%,#FF3D6B_50%,#FFB347_100%)] bg-clip-text font-light italic text-transparent">starts here.</em>
+            </h2>
+            <p className="mx-auto mt-6 max-w-[440px] text-[17px] font-light leading-[1.7] text-[#9A7A70]">Join thousands of people who stopped settling for average birthdays. It is free to start.</p>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/register" className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF5C47,#FF3D6B)] px-11 py-[17px] text-[17px] font-bold text-white shadow-[0_10px_40px_rgba(255,92,71,0.45)] transition hover:-translate-y-[3px] hover:shadow-[0_16px_52px_rgba(255,92,71,0.5)]">Plan my birthday - it&apos;s free</Link>
+              <Link href="/events" className="inline-flex items-center justify-center rounded-full border-[1.5px] border-[rgba(26,15,10,0.12)] bg-white px-9 py-[17px] text-[17px] font-medium text-[#1A0F0A] transition hover:border-[#FF5C47] hover:text-[#FF5C47]">Browse events first</Link>
+            </div>
+            <p className="mt-8 text-[13px] text-[#9A7A70]">No credit card needed - <span className="font-bold text-[#FF5C47]">100% refund</span> if event doesn&apos;t lock</p>
+          </div>
+        </section>
+      </main>
+
+      <LandingFooter />
+
+      <style jsx global>{`
+        .landing-reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+        .landing-reveal.in { opacity: 1; transform: none; }
+        .landing-stagger > * { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .landing-stagger.in > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0s; }
+        .landing-stagger.in > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.1s; }
+        .landing-stagger.in > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.2s; }
+        .landing-stagger.in > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.3s; }
+        .hero-orb { animation: orbDrift 12s ease-in-out infinite; }
+        .hero-orb-reverse { animation: orbDrift 18s ease-in-out infinite reverse; }
+        .hero-badge { animation: popIn 0.6s 0.1s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .hero-card-1 { animation: cardFloat 5s ease-in-out infinite 0.5s; }
+        .hero-card-2 { animation: cardFloatReverse 5s ease-in-out infinite 1s; }
+        .hero-card-3 { animation: cardFloat 5s ease-in-out infinite 1.5s; }
+        .pulse-dot { animation: pulseDot 2s infinite; }
+        .emoji-pop { animation: emojiPop 2s ease-in-out infinite; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.85) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.6); } }
+        @keyframes orbDrift { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(40px, -30px) scale(1.05); } 66% { transform: translate(-20px, 40px) scale(0.95); } }
+        @keyframes cardFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes cardFloatReverse { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
+        @keyframes emojiPop { 0%, 100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.1) rotate(5deg); } }
+      `}</style>
+    </>
   );
 }

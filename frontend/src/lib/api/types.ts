@@ -206,6 +206,9 @@ export type VenueRecommendation = {
   is_sponsored: boolean;
   priority: number;
   neighborhood_tags: string[];
+  distance_km?: number | null;
+  avg_rating: number | null;
+  rating_count: number;
 };
 
 export type VenuePartnerAdmin = {

@@ -115,6 +115,12 @@ class WishlistItemDetailView(APIView):
         serializer.save()
         return Response(WishlistItemReadSerializer(item).data)
 
+    def delete(self, request, pk):
+        item = get_wishlist_item_for_user(pk, request.user)
+        self.check_object_permissions(request, item)
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema_view(
     post=extend_schema(request=WishlistReservationWriteSerializer, responses={201: WishlistReservationReadSerializer}),
@@ -129,7 +135,7 @@ class WishlistReserveView(APIView):
         if action == "cancel":
             if not request.user.is_authenticated:
                 return Response({"detail": "Authentication is required to cancel a reservation."}, status=status.HTTP_401_UNAUTHORIZED)
-            cancel_wishlist_reservation(item, request.user)
+            cancel_wishlist_reservation(item, request.user, message_body=request.data.get("message", ""))
             return Response({"detail": "Reservation cancelled."})
         if item.is_reserved:
             return Response({"detail": "Item already reserved."}, status=status.HTTP_400_BAD_REQUEST)

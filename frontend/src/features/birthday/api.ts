@@ -104,11 +104,20 @@ export function useWishlistReserve(itemId: number, slug: string) {
 export function useWishlistCancel(itemId: number, slug: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (payload?: { message?: string }) =>
       apiRequest<{ detail: string }>(`/wishlist-items/${itemId}/reserve`, {
         method: "POST",
-        body: JSON.stringify({ action: "cancel" }),
+        body: JSON.stringify({ action: "cancel", message: payload?.message ?? "" }),
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["birthday-profile", slug] }),
+  });
+}
+
+export function useWishlistDelete(itemId: number, slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiRequest<void>(`/wishlist-items/${itemId}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["birthday-profile", slug] }),
   });
 }

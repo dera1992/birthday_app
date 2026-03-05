@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -13,17 +14,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ErrorNotice } from "@/components/ui/error-notice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingBlock, ErrorState } from "@/components/ui/state-block";
 import { Textarea } from "@/components/ui/textarea";
 import { LocationPicker } from "@/components/location/LocationPicker";
 import type { LocationValue } from "@/components/location/LocationPicker";
-import { PackGrid } from "@/components/packs/PackGrid";
-import { PackPreviewDrawer } from "@/components/packs/PackPreviewDrawer";
 import { useAuth } from "@/features/auth/auth-context";
-import { publishEventRequest, useCreateEvent } from "@/features/events/api";
-import { usePacks } from "@/features/packs/api";
+import { useEvent, useUpdateEvent } from "@/features/events/api";
 import { getErrorMessage } from "@/lib/api/errors";
 import { eventCreateSchema } from "@/lib/validators/events";
-import type { CuratedPack } from "@/lib/api/types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -165,22 +163,30 @@ function CheckboxDropdown({
   );
 }
 
-type EventValues = z.infer<typeof eventCreateSchema>;
-type Step = "pack-select" | "form";
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-export default function NewEventPage() {
+/** Convert ISO datetime string to datetime-local input value (YYYY-MM-DDTHH:mm) */
+function toDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return iso.slice(0, 16);
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+type EventValues = z.infer<typeof eventCreateSchema>;
+
+export default function EditEventPage() {
+  const params = useParams<{ id: string }>();
+  const eventId = Number(params.id);
+  const router = useRouter();
   const { user } = useAuth();
-  const createEvent = useCreateEvent();
-  const packsQuery = usePacks();
-  const [submitMode, setSubmitMode] = useState<"draft" | "publish">("draft");
-  const [step, setStep] = useState<Step>("pack-select");
-  const [selectedPack, setSelectedPack] = useState<CuratedPack | null>(null);
-  const [previewPack, setPreviewPack] = useState<CuratedPack | null>(null);
-  const [locationValue, setLocationValue] = useState<LocationValue | null>({
-    lat: 51.5072,
-    lng: -0.1276,
-    label: "Central London",
-  });
+  const eventQuery = useEvent(eventId);
+  const updateEvent = useUpdateEvent(eventId);
+  const event = eventQuery.data;
+
+  const [locationValue, setLocationValue] = useState<LocationValue | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [populated, setPopulated] = useState(false);
 
   const form = useForm<EventValues>({
     resolver: zodResolver(eventCreateSchema),
@@ -196,175 +202,138 @@ export default function NewEventPage() {
       expand_to_strangers: false,
       location_point: { lat: 51.5072, lng: -0.1276 },
       radius_meters: 5000,
-      approx_area_label: "Central London",
+      approx_area_label: "",
       min_guests: 4,
       max_guests: 8,
       payment_mode: "PAID",
-      amount: "35.00",
-      target_amount: "280.00",
+      amount: "",
+      target_amount: "",
       currency: "GBP",
-      expense_breakdown: "Venue booking: 120\nFood and drinks: 110\nCake and decor: 50",
+      expense_breakdown: "",
       lock_deadline_at: "",
       criteria: {
-        verified_only: true,
+        verified_only: false,
         interests: [],
         allowed_genders: [],
         min_age: undefined,
         max_age: undefined,
         allowed_marital_statuses: [],
         allowed_occupations: [],
-        must_pay_to_apply: true,
+        must_pay_to_apply: false,
       },
     },
   });
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  if (!user?.birthday_profile_completed) {
+  // Populate form once event data loads
+  useEffect(() => {
+    if (!event || populated) return;
+
+    const criteria = (event.criteria ?? {}) as {
+      verified_only?: boolean;
+      interests?: string[];
+      allowed_genders?: string[];
+      min_age?: number;
+      max_age?: number;
+      allowed_marital_statuses?: string[];
+      allowed_occupations?: string[];
+      must_pay_to_apply?: boolean;
+    };
+
+    form.reset({
+      pack_slug: event.pack?.slug ?? null,
+      title: event.title,
+      description: event.description,
+      agenda: event.agenda,
+      category: event.category,
+      start_at: toDatetimeLocal(event.start_at),
+      end_at: toDatetimeLocal(event.end_at),
+      visibility: event.visibility,
+      expand_to_strangers: event.expand_to_strangers,
+      location_point: event.location_point,
+      radius_meters: event.radius_meters,
+      approx_area_label: event.approx_area_label,
+      min_guests: event.min_guests,
+      max_guests: event.max_guests,
+      payment_mode: event.payment_mode,
+      amount: event.amount ?? "",
+      target_amount: event.target_amount ?? "",
+      currency: event.currency,
+      expense_breakdown: event.expense_breakdown,
+      lock_deadline_at: toDatetimeLocal(event.lock_deadline_at),
+      criteria: {
+        verified_only: criteria.verified_only ?? false,
+        interests: criteria.interests ?? [],
+        allowed_genders: criteria.allowed_genders ?? [],
+        min_age: criteria.min_age,
+        max_age: criteria.max_age,
+        allowed_marital_statuses: criteria.allowed_marital_statuses ?? [],
+        allowed_occupations: criteria.allowed_occupations ?? [],
+        must_pay_to_apply: criteria.must_pay_to_apply ?? false,
+      },
+    });
+
+    setLocationValue({
+      lat: event.location_point.lat,
+      lng: event.location_point.lng,
+      label: event.approx_area_label,
+    });
+
+    setPopulated(true);
+  }, [event, form, populated]);
+
+  async function onSubmit(values: EventValues) {
+    setSubmitError(null);
+    try {
+      await updateEvent.mutateAsync(values as unknown as Record<string, unknown>);
+      toast.success("Event updated successfully.");
+      router.push(`/events/${eventId}`);
+    } catch (error) {
+      setSubmitError(getErrorMessage(error, "Unable to update event."));
+    }
+  }
+
+  if (eventQuery.isLoading) return <LoadingBlock message="Loading event…" />;
+  if (eventQuery.error) return <ErrorState description={getErrorMessage(eventQuery.error, "Unable to load this event.")} />;
+  if (!event) return null;
+
+  const isHost = event.host === user?.id;
+  if (!isHost) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-4xl">Complete your birthday profile first</CardTitle>
-          <CardDescription>
-            Shared birthday support does not need a full profile, but hosting does. Finish your birthday profile first so your events and guest approvals are grounded in real profile data.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <Link href={user?.birthday_profile_slug ? `/birthday-profile/${user.birthday_profile_slug}/edit` : "/birthday-profile/new"}>
-              {user?.birthday_profile_slug ? "Finish birthday profile" : "Create birthday profile"}
-            </Link>
-          </Button>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          You do not have permission to edit this event.
         </CardContent>
       </Card>
     );
   }
 
-  function handlePackConfirm(pack: CuratedPack | null) {
-    if (pack) {
-      const d = pack.defaults;
-      if (d.category) form.setValue("category", d.category);
-      if (d.agenda_template) form.setValue("agenda", d.agenda_template);
-      if (d.min_guests != null) form.setValue("min_guests", d.min_guests);
-      if (d.max_guests != null) form.setValue("max_guests", d.max_guests);
-      if (d.radius_meters != null) form.setValue("radius_meters", d.radius_meters);
-      if (d.payment_mode) form.setValue("payment_mode", d.payment_mode);
-      if (d.criteria_defaults) {
-        const existing = form.getValues("criteria") || {};
-        for (const [k, v] of Object.entries(d.criteria_defaults)) {
-          if (!(k in existing)) {
-            form.setValue(`criteria.${k}` as Parameters<typeof form.setValue>[0], v as never);
-          }
-        }
-      }
-      form.setValue("pack_slug", pack.slug);
-    } else {
-      form.setValue("pack_slug", null);
-    }
-    setSelectedPack(pack);
-    setStep("form");
-  }
+  const currentGender =
+    (form.watch("criteria.allowed_genders") ?? []).length === 1
+      ? (form.watch("criteria.allowed_genders") ?? [])[0]
+      : "BOTH";
 
-  async function onSubmit(values: EventValues) {
-    setSubmitError(null);
-    try {
-      const created = await createEvent.mutateAsync(values);
-      if (submitMode === "publish") {
-        await publishEventRequest(created.id);
-        toast.success("Event created and published.");
-        window.location.href = `/events/mine?created=${created.id}&published=1`;
-        return;
-      }
-
-      toast.success("Event draft created.");
-      window.location.href = `/events/mine?created=${created.id}`;
-    } catch (error) {
-      setSubmitError(getErrorMessage(error, "Unable to create event."));
-    }
-  }
-
-  // Step 1: Pack selection
-  if (step === "pack-select") {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-4xl">Choose a birthday pack</CardTitle>
-            <CardDescription>
-              Packs pre-fill your event details and show tailored venue recommendations. You can customise every field after selecting one.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PackGrid
-              packs={packsQuery.data ?? []}
-              isLoading={packsQuery.isLoading}
-              selectedSlug={selectedPack?.slug ?? null}
-              onSelect={(pack) => setSelectedPack(pack)}
-              onPreview={(pack) => setPreviewPack(pack)}
-            />
-            <div className="mt-6 flex items-center justify-between">
-              <Button variant="ghost" onClick={() => handlePackConfirm(null)}>
-                Skip — use blank form
-              </Button>
-              <Button
-                disabled={!selectedPack}
-                onClick={() => selectedPack && handlePackConfirm(selectedPack)}
-              >
-                Continue with {selectedPack ? selectedPack.name : "pack"} →
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <PackPreviewDrawer
-          pack={previewPack}
-          onClose={() => setPreviewPack(null)}
-          onSelect={(pack) => {
-            setPreviewPack(null);
-            handlePackConfirm(pack);
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Step 2: Event creation form
   return (
     <div className="space-y-6">
-      {selectedPack ? (
+      {event.pack ? (
         <div className="flex items-center gap-3 rounded-[22px] border border-border bg-background/70 px-4 py-3">
-          <span className="text-2xl">{selectedPack.icon_emoji}</span>
+          <span className="text-2xl">{event.pack.icon_emoji}</span>
           <div>
-            <p className="text-sm font-semibold">{selectedPack.name}</p>
-            {selectedPack.defaults.budget_range_label ? (
-              <p className="text-xs text-muted-foreground">{selectedPack.defaults.budget_range_label}</p>
+            <p className="text-sm font-semibold">{event.pack.name}</p>
+            {event.pack.defaults.budget_range_label ? (
+              <p className="text-xs text-muted-foreground">{event.pack.defaults.budget_range_label}</p>
             ) : null}
           </div>
-          <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setStep("pack-select")}>
-            Change pack
-          </Button>
         </div>
       ) : null}
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-4xl">Create a new event</CardTitle>
-          <CardDescription>Create the event as a draft first, then publish it from your host area once the details look right.</CardDescription>
+          <CardTitle className="font-display text-4xl">Edit event</CardTitle>
+          <CardDescription>
+            Changes are saved immediately. Guests who have already applied will see the updated details.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[22px] border border-border bg-background/70 p-4">
-              <p className="text-sm font-semibold">1. Save draft</p>
-              <p className="mt-2 text-sm text-muted-foreground">Drafts are private to you and visible in My Events immediately.</p>
-            </div>
-            <div className="rounded-[22px] border border-border bg-background/70 p-4">
-              <p className="text-sm font-semibold">2. Review host tools</p>
-              <p className="mt-2 text-sm text-muted-foreground">Confirm criteria, payout setup, and venue details before going live.</p>
-            </div>
-            <div className="rounded-[22px] border border-border bg-background/70 p-4">
-              <p className="text-sm font-semibold">3. Publish</p>
-              <p className="mt-2 text-sm text-muted-foreground">Only published OPEN events show in discovery. Drafts never appear in the feed.</p>
-            </div>
-          </div>
           <form className="grid gap-x-6 gap-y-5 lg:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
             <div className="lg:col-span-2">
               <ErrorNotice message={submitError} />
@@ -498,11 +467,11 @@ export default function NewEventPage() {
               <Label>Gender</Label>
               <select
                 className="flex h-11 w-full rounded-2xl border border-input bg-background/80 px-4 text-sm"
-                onChange={(event) => {
-                  const value = event.target.value;
+                value={currentGender}
+                onChange={(e) => {
+                  const value = e.target.value;
                   form.setValue("criteria.allowed_genders", value === "BOTH" || value === "" ? [] : [value]);
                 }}
-                defaultValue="BOTH"
               >
                 <option value="BOTH">Any gender</option>
                 <option value="MALE">Male only</option>
@@ -517,6 +486,9 @@ export default function NewEventPage() {
                   <Input
                     type="number"
                     placeholder="18"
+                    defaultValue={
+                      ((event.criteria as { min_age?: number } | null)?.min_age) ?? ""
+                    }
                     onChange={(e) => form.setValue("criteria.min_age", e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </div>
@@ -525,6 +497,9 @@ export default function NewEventPage() {
                   <Input
                     type="number"
                     placeholder="99"
+                    defaultValue={
+                      ((event.criteria as { max_age?: number } | null)?.max_age) ?? ""
+                    }
                     onChange={(e) => form.setValue("criteria.max_age", e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </div>
@@ -575,11 +550,11 @@ export default function NewEventPage() {
             {/* ── Submit ───────────────────────────────────────────────── */}
             <div className="lg:col-span-2 border-t pt-2">
               <div className="grid gap-3 md:grid-cols-2">
-                <Button type="submit" className="w-full" disabled={createEvent.isPending} onClick={() => setSubmitMode("draft")}>
-                  Save draft
+                <Button type="submit" className="w-full" disabled={updateEvent.isPending}>
+                  {updateEvent.isPending ? "Saving…" : "Save changes"}
                 </Button>
-                <Button type="submit" className="w-full" variant="outline" disabled={createEvent.isPending} onClick={() => setSubmitMode("publish")}>
-                  Save and publish
+                <Button type="button" variant="outline" className="w-full" asChild>
+                  <Link href={`/events/${eventId}`}>Cancel</Link>
                 </Button>
               </div>
             </div>

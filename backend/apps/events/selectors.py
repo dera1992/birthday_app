@@ -27,6 +27,16 @@ def get_events_for_host(host):
     return BirthdayEvent.objects.filter(host=host).select_related("host", "payee_user").order_by("-created_at")
 
 
+def get_events_applied_to(user):
+    return (
+        BirthdayEvent.objects
+        .filter(applications__applicant=user)
+        .exclude(host=user)
+        .select_related("host", "payee_user")
+        .order_by("-created_at")
+    )
+
+
 def get_applications_for_host_event(event_id: int, host):
     event = get_event_for_host(event_id, host)
     return (

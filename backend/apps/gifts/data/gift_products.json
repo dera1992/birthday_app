@@ -1,0 +1,92 @@
+[
+  {
+    "slug": "birthday-card-classic",
+    "name": "Classic Birthday Card",
+    "category": "CARD",
+    "description": "A warm, illustrated birthday card delivered instantly to the birthday page.",
+    "price": "3.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "birthday-card-luxury",
+    "name": "Luxury Birthday Card",
+    "category": "CARD",
+    "description": "A premium animated card with a personal message, gold foil effect.",
+    "price": "6.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "flower-bouquet-digital",
+    "name": "Digital Flower Bouquet",
+    "category": "FLOWER",
+    "description": "A beautiful animated bouquet of flowers — roses, peonies, and sunflowers.",
+    "price": "9.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "flower-single-rose",
+    "name": "Single Red Rose",
+    "category": "FLOWER",
+    "description": "A classic red rose with a short personal message attached.",
+    "price": "4.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "message-heartfelt",
+    "name": "Heartfelt Message",
+    "category": "MESSAGE",
+    "description": "Send a long-form personal message that stays pinned to the birthday page all day.",
+    "price": "2.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "message-poem",
+    "name": "Birthday Poem",
+    "category": "MESSAGE",
+    "description": "A hand-crafted birthday poem personalised with the recipient's name.",
+    "price": "5.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "badge-birthday-star",
+    "name": "Birthday Star Badge",
+    "category": "BADGE",
+    "description": "Award the birthday person a shining star badge displayed on their public page.",
+    "price": "1.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "badge-queen-king",
+    "name": "Queen / King for a Day Badge",
+    "category": "BADGE",
+    "description": "Crown them queen or king — a regal badge shown at the top of their page.",
+    "price": "3.49",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "video-birthday-song",
+    "name": "Personalised Birthday Song",
+    "category": "VIDEO",
+    "description": "A short animated video with a birthday song and the recipient's name.",
+    "price": "14.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  },
+  {
+    "slug": "video-memory-reel",
+    "name": "Memory Reel",
+    "category": "VIDEO",
+    "description": "Upload up to 5 photos and we turn them into a 30-second animated reel for the birthday page.",
+    "price": "19.99",
+    "currency": "gbp",
+    "platform_fee_bps": 3000
+  }
+]

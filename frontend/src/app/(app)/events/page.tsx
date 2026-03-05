@@ -1,68 +1,85 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Filter, LocateFixed } from "lucide-react";
-import { toast } from "sonner";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 
 import { EventFeedMap } from "@/features/events/components/event-feed-map";
 import { useEventFeed } from "@/features/events/api";
 import { ErrorState, EmptyState, LoadingBlock } from "@/components/ui/state-block";
-import { CITY_PRESETS, getBrowserCoordinates } from "@/lib/geo";
+import { CITY_PRESETS } from "@/lib/geo";
+import { LocationSearchInput } from "@/components/location/LocationSearchInput";
+import type { LocationResult } from "@/components/location/LocationSearchInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getErrorMessage } from "@/lib/api/errors";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useLocationContext } from "@/lib/location-context";
 
 const categories = ["DINING", "NIGHTLIFE", "WELLNESS", "OUTDOORS", "CULTURE"];
 
 export default function EventsFeedPage() {
   const searchParams = useSearchParams();
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const router = useRouter();
+  const { coords: ctxCoords, setCoords: setCtxCoords } = useLocationContext();
+
+  const [location, setLocation] = useState<LocationResult>({
+    lat: ctxCoords.lat,
+    lng: ctxCoords.lng,
+    label: ctxCoords.label,
+  });
   const [radius, setRadius] = useState(5000);
   const [category, setCategory] = useState("");
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const [selectedCity, setSelectedCity] = useState(searchParams.get("city") ?? CITY_PRESETS[0].label);
+  const [inputSearch, setInputSearch] = useState(searchParams.get("q") ?? "");
+  const [appliedSearch, setAppliedSearch] = useState(searchParams.get("q") ?? "");
 
+  // Keep in sync with navbar location context
+  useEffect(() => {
+    setLocation({ lat: ctxCoords.lat, lng: ctxCoords.lng, label: ctxCoords.label });
+  }, [ctxCoords]);
+
+  // Override from URL params on first load
   useEffect(() => {
     const lat = Number(searchParams.get("lat"));
     const lng = Number(searchParams.get("lng"));
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      setCoords({ lat, lng });
+    if (Number.isFinite(lat) && lat !== 0 && Number.isFinite(lng) && lng !== 0) {
+      setLocation((prev) => ({ ...prev, lat, lng }));
       return;
     }
-
     const cityParam = searchParams.get("city");
-    const nextCity = cityParam && CITY_PRESETS.some((city) => city.label === cityParam) ? cityParam : selectedCity;
-    const preset = CITY_PRESETS.find((city) => city.label === nextCity) ?? CITY_PRESETS[0];
-    setCoords({ lat: preset.lat, lng: preset.lng });
-  }, [searchParams, selectedCity]);
-
-  useEffect(() => {
-    setSearch(searchParams.get("q") ?? "");
-    const city = searchParams.get("city");
-    setSelectedCity(city && CITY_PRESETS.some((option) => option.label === city) ? city : CITY_PRESETS[0].label);
+    const preset = CITY_PRESETS.find((c) => c.label === cityParam);
+    if (preset) setLocation({ lat: preset.lat, lng: preset.lng, label: preset.label });
   }, [searchParams]);
 
+  useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    setInputSearch(q);
+    setAppliedSearch(q);
+  }, [searchParams]);
+
+  function handlePickLocation(loc: LocationResult) {
+    setLocation(loc);
+    setCtxCoords(loc);
+  }
+
   const feedQuery = useEventFeed({
-    lat: coords?.lat,
-    lng: coords?.lng,
+    lat: location.lat,
+    lng: location.lng,
     radius,
     category,
-    q: search,
+    q: appliedSearch,
   });
 
-  async function detectLocation() {
-    try {
-      const nextCoords = await getBrowserCoordinates();
-      setCoords(nextCoords);
-      toast.success("Using your current location.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to fetch your location.");
-    }
+  function handleSearchSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = inputSearch.trim();
+    setAppliedSearch(trimmed);
+    const params = new URLSearchParams();
+    if (trimmed) params.set("q", trimmed);
+    router.replace(`/events?${params.toString()}`);
   }
 
   return (
@@ -72,77 +89,81 @@ export default function EventsFeedPage() {
           <div>
             <Badge>Discover</Badge>
             <CardTitle className="pt-3 font-display text-4xl">Find birthday experiences nearby</CardTitle>
-            <CardDescription>Map-led discovery for curated events that are public or open to stranger expansion.</CardDescription>
+            <CardDescription>Public events near your location, ordered by distance.</CardDescription>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={detectLocation}>
-              <LocateFixed className="h-4 w-4" />
-              Use my location
-            </Button>
-            <Button asChild>
-              <Link href="/events/new">Host a new event</Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link href="/events/new">Host a new event</Link>
+          </Button>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-4">
-          <label className="space-y-2 md:col-span-2">
-            <span className="text-sm font-medium">Search</span>
-            <Input
-              placeholder="Search by title, area, description, or host"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium">City fallback</span>
-            <select
-              className="flex h-11 w-full rounded-2xl border border-input bg-background/80 px-4 text-sm"
-              value={selectedCity}
-              onChange={(event) => setSelectedCity(event.target.value)}
-            >
-              {CITY_PRESETS.map((city) => (
-                <option key={city.label} value={city.label}>
-                  {city.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Radius (m)</span>
-            <Input type="number" value={radius} onChange={(event) => setRadius(Number(event.target.value))} />
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Category</span>
-            <select
-              className="flex h-11 w-full rounded-2xl border border-input bg-background/80 px-4 text-sm"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              <option value="">All</option>
-              {categories.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex items-end md:col-span-4">
-            <div className="rounded-3xl bg-secondary/70 px-4 py-3 text-sm text-muted-foreground">
-              <Filter className="mb-2 h-4 w-4 text-primary" />
-              Search narrows the same nearby feed. Results still stay ordered by distance first, then event time.
+        <CardContent className="space-y-4">
+          {/* Combined search bar */}
+          <form onSubmit={handleSearchSubmit}>
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-input bg-background/80 p-2 shadow-sm">
+              {/* Text search */}
+              <div className="relative min-w-[180px] flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search events, title, area, host…"
+                  value={inputSearch}
+                  onChange={(e) => setInputSearch(e.target.value)}
+                  className="border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0"
+                />
+              </div>
+
+              <div className="hidden h-6 w-px bg-border sm:block" />
+
+              {/* Location search */}
+              <div className="min-w-[200px] flex-1">
+                <LocationSearchInput
+                  value={location.label}
+                  onPick={handlePickLocation}
+                  placeholder="City or neighbourhood…"
+                />
+              </div>
+
+              <Button type="submit" className="rounded-xl">
+                <Search className="mr-2 h-4 w-4" />
+                Search
+              </Button>
             </div>
+          </form>
+
+          {/* Secondary filters */}
+          <div className="flex flex-wrap gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Radius (m)</span>
+              <Input
+                type="number"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className="w-28 h-9"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Category</span>
+              <select
+                className="flex h-9 rounded-xl border border-input bg-background/80 px-3 text-sm"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="">All</option>
+                {categories.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
           </div>
         </CardContent>
       </Card>
 
-      {coords ? <EventFeedMap events={feedQuery.data ?? []} center={coords} /> : null}
+      <EventFeedMap events={feedQuery.data ?? []} center={location} />
 
       {feedQuery.isLoading ? <LoadingBlock message="Loading events near you..." /> : null}
       {feedQuery.error ? <ErrorState description={getErrorMessage(feedQuery.error, "Unable to load events right now.")} /> : null}
       {!feedQuery.isLoading && !feedQuery.error && !(feedQuery.data ?? []).length ? (
         <EmptyState
           title="No events match these filters"
-          description="Try a larger radius, switch city fallback, or publish one of your own drafts from My Events."
+          description="Try a larger radius, different location, or publish one of your own drafts from My Events."
           actionHref="/events/new"
           actionLabel="Create an event"
         />
@@ -163,9 +184,7 @@ export default function EventsFeedPage() {
                 <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <span>{formatDate(event.start_at)}</span>
                   <span>{event.approx_area_label}</span>
-                  <span>
-                    {event.approved_count}/{event.max_guests} approved
-                  </span>
+                  <span>{event.approved_count}/{event.max_guests} approved</span>
                 </div>
               </div>
               <div className="space-y-3 text-right">

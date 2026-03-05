@@ -31,10 +31,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/settings", label: "Settings", icon: Settings },
     ...(user?.is_staff ? [{ href: "/venues", label: "Venues", icon: Store }] : []),
   ];
-  const activeHref =
-    nav
-      .filter((item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`)))
-      .sort((left, right) => right.href.length - left.href.length)[0]?.href ?? null;
+  // Any /events/<id>[/...] path (event detail, edit, applications, checkout) → "My Events"
+  const activeHref = /^\/events\/\d/.test(pathname)
+    ? "/events/mine"
+    : nav
+        .filter((item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`)))
+        .sort((left, right) => right.href.length - left.href.length)[0]?.href ?? null;
 
   return (
     <div className="container py-8">

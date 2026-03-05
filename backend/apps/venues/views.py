@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
 
-from apps.venues.models import ReferralClick, VenuePartner
+from apps.venues.models import ReferralClick, VenuePartner, VenueRating
 from apps.venues.selectors import get_active_venue, get_recommendation_queryset
 from apps.venues.serializers import VenueAdminSerializer, VenuePartnerSerializer
 
@@ -15,6 +15,7 @@ from apps.venues.serializers import VenueAdminSerializer, VenuePartnerSerializer
         parameters=[
             OpenApiParameter(name="city", required=False, type=str),
             OpenApiParameter(name="category", required=False, type=str),
+            OpenApiParameter(name="q", required=False, type=str),
         ],
         responses={200: VenuePartnerSerializer(many=True)},
     ),
@@ -26,6 +27,7 @@ class VenueRecommendationView(APIView):
         queryset = get_recommendation_queryset(
             city=request.query_params.get("city"),
             category=request.query_params.get("category"),
+            search=request.query_params.get("q"),
         )
         return Response(VenuePartnerSerializer(queryset, many=True).data)
 
@@ -94,3 +96,46 @@ class VenueAdminDetailView(APIView):
         venue = get_object_or_404(VenuePartner, id=venue_id)
         venue.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer(
+            name="VenueRateRequest",
+            fields={
+                "score": serializers.IntegerField(min_value=1, max_value=5),
+                "review": serializers.CharField(required=False, allow_blank=True),
+            },
+        ),
+        responses={
+            200: inline_serializer(
+                name="VenueRateResponse",
+                fields={
+                    "avg_rating": serializers.FloatField(allow_null=True),
+                    "rating_count": serializers.IntegerField(),
+                    "my_score": serializers.IntegerField(),
+                },
+            )
+        },
+    ),
+)
+class VenueRateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, venue_id):
+        venue = get_active_venue(venue_id)
+        score = request.data.get("score")
+        review = request.data.get("review", "")
+        if not isinstance(score, int) or not (1 <= score <= 5):
+            return Response({"detail": "score must be an integer between 1 and 5."}, status=status.HTTP_400_BAD_REQUEST)
+        VenueRating.objects.update_or_create(
+            user=request.user,
+            venue=venue,
+            defaults={"score": score, "review": review},
+        )
+        updated = VenuePartnerSerializer(venue).data
+        return Response({
+            "avg_rating": updated["avg_rating"],
+            "rating_count": updated["rating_count"],
+            "my_score": score,
+        })

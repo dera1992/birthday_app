@@ -8,6 +8,7 @@ def get_recommendation_queryset(
     category: str | None = None,
     categories: list | None = None,
     neighborhood_tag: str | None = None,
+    search: str | None = None,
 ):
     queryset = VenuePartner.objects.filter(is_active=True)
     if city:
@@ -18,6 +19,8 @@ def get_recommendation_queryset(
         queryset = queryset.filter(category__iexact=category)
     if neighborhood_tag:
         queryset = queryset.filter(neighborhood_tags__contains=[neighborhood_tag])
+    if search:
+        queryset = queryset.filter(name__icontains=search)
     return queryset.order_by("-is_sponsored", "-priority", "name")
 
 

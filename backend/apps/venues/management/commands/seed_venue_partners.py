@@ -33,6 +33,8 @@ class Command(BaseCommand):
                     "priority": record.get("priority", 0),
                     "is_sponsored": record.get("is_sponsored", False),
                     "neighborhood_tags": record.get("neighborhood_tags", []),
+                    "latitude": record.get("latitude"),
+                    "longitude": record.get("longitude"),
                 },
             )
             if was_created:

@@ -14,6 +14,13 @@ export function useMyEvents() {
   });
 }
 
+export function useMyAppliedEvents() {
+  return useQuery({
+    queryKey: ["my-applied-events"],
+    queryFn: () => apiRequest<EventRecord[]>("/events/applied"),
+  });
+}
+
 export function useEventFeed(filters: { lat?: number; lng?: number; radius?: number; category?: string; q?: string }) {
   return useQuery({
     queryKey: ["event-feed", filters],
@@ -35,7 +42,7 @@ export function useEventFeed(filters: { lat?: number; lng?: number; radius?: num
 export function useEvent(eventId: number) {
   return useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => apiRequest<EventRecord>(`/events/${eventId}`, { auth: false }),
+    queryFn: () => apiRequest<EventRecord>(`/events/${eventId}`),
     enabled: Boolean(eventId),
   });
 }
@@ -49,6 +56,22 @@ export function useCreateEvent() {
         body: JSON.stringify(payload),
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["my-events"] });
+    },
+  });
+}
+
+export function useUpdateEvent(eventId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      apiRequest<EventRecord>(`/events/${eventId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
       queryClient.invalidateQueries({ queryKey: ["event-feed"] });
       queryClient.invalidateQueries({ queryKey: ["my-events"] });
     },
