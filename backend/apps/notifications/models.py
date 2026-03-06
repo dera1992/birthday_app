@@ -6,11 +6,17 @@ class Notification(models.Model):
     TYPE_APPLICATION_RECEIVED = "APPLICATION_RECEIVED"
     TYPE_APPLICATION_APPROVED = "APPLICATION_APPROVED"
     TYPE_APPLICATION_DECLINED = "APPLICATION_DECLINED"
+    TYPE_EVENT_REMINDER = "EVENT_REMINDER"
+    TYPE_BIRTHDAY_REMINDER = "BIRTHDAY_REMINDER"
+    TYPE_MODERATION_PENDING = "MODERATION_PENDING"
 
     TYPE_CHOICES = [
         (TYPE_APPLICATION_RECEIVED, "Application received"),
         (TYPE_APPLICATION_APPROVED, "Application approved"),
         (TYPE_APPLICATION_DECLINED, "Application declined"),
+        (TYPE_EVENT_REMINDER, "Event reminder"),
+        (TYPE_BIRTHDAY_REMINDER, "Birthday reminder"),
+        (TYPE_MODERATION_PENDING, "Moderation pending"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")

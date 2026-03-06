@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,7 @@ import {
   useSupportMessageApprove,
   useSupportMessageCreate,
   useSupportMessageReject,
+  useUpdateBirthdayProfile,
   useWishlistCancel,
   useWishlistReserve,
 } from "@/features/birthday/api";
@@ -368,6 +369,18 @@ export default function BirthdayProfilePage() {
               ) : null}
             </div>
           </div>
+
+          {/* ── Countdown ─────────────────────────────────────────────────── */}
+          {profile?.day && profile?.month ? (
+            <BirthdayCountdownSection
+              day={profile.day}
+              month={profile.month}
+              name={profile.first_name || fullName || "them"}
+              isOwner={isOwner}
+              countdownPublic={Boolean((profile.preferences as Record<string, unknown>)?.countdown_public)}
+              slug={slug}
+            />
+          ) : null}
 
           {/* ── Tabs ───────────────────────────────────────────────────────── */}
           <div className="space-y-4">
@@ -824,6 +837,142 @@ export default function BirthdayProfilePage() {
 
       </main>
     </>
+  );
+}
+
+// ── BirthdayCountdown ─────────────────────────────────────────────────────────
+
+function getNextBirthday(day: number, month: number): Date {
+  const now = new Date();
+  const year = now.getFullYear();
+  const next = new Date(year, month - 1, day, 0, 0, 0, 0);
+  if (next <= now) next.setFullYear(year + 1);
+  return next;
+}
+
+function useCountdown(day: number, month: number) {
+  const [timeLeft, setTimeLeft] = useState(() =>
+    Math.max(0, getNextBirthday(day, month).getTime() - Date.now())
+  );
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setTimeLeft(Math.max(0, getNextBirthday(day, month).getTime() - Date.now()));
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [day, month]);
+
+  const totalSeconds = Math.floor(timeLeft / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return { days, hours, minutes, seconds, isBirthday: totalSeconds === 0 };
+}
+
+function BirthdayCountdownSection({
+  day, month, name, isOwner, countdownPublic, slug,
+}: {
+  day: number; month: number; name: string;
+  isOwner: boolean; countdownPublic: boolean; slug: string;
+}) {
+  const { days, hours, minutes, seconds, isBirthday } = useCountdown(day, month);
+  const updateProfile = useUpdateBirthdayProfile(slug);
+  const [saving, setSaving] = useState(false);
+
+  // Only show within 7 days (or on the day itself)
+  const withinWindow = isBirthday || days < 7 || (days === 7 && hours === 0 && minutes === 0 && seconds === 0);
+
+  // Non-owners only see it if public AND within window
+  if (!isOwner && (!countdownPublic || !withinWindow)) return null;
+  // Owner sees it only within window (but always sees the toggle)
+  if (isOwner && !withinWindow) {
+    return (
+      <div className="mx-6 mb-4 flex items-center justify-between rounded-[16px] border border-dashed border-border px-4 py-3">
+        <p className="text-xs text-muted-foreground">Countdown visible within 7 days of your birthday</p>
+        <VisibilityToggle isPublic={countdownPublic} saving={saving} onToggle={handleToggle} />
+      </div>
+    );
+  }
+
+  async function handleToggle() {
+    setSaving(true);
+    try {
+      await updateProfile.mutateAsync({
+        preferences: { countdown_public: !countdownPublic },
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (isBirthday) {
+    return (
+      <div className="mx-6 mb-4 rounded-[20px] border border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50 px-5 py-4 text-center dark:border-rose-800/30 dark:from-rose-950/30 dark:to-orange-950/20">
+        <p className="text-2xl">🎉🎂🎉</p>
+        <p className="mt-1 font-display text-lg font-semibold text-rose-700 dark:text-rose-300">
+          Today is {name}&apos;s birthday!
+        </p>
+        <p className="text-sm text-muted-foreground">Wish them a happy birthday!</p>
+        {isOwner && <VisibilityToggle isPublic={countdownPublic} saving={saving} onToggle={handleToggle} className="mt-3 justify-center" />}
+      </div>
+    );
+  }
+
+  const units = [
+    { label: "Days", value: days },
+    { label: "Hours", value: hours },
+    { label: "Mins", value: minutes },
+    { label: "Secs", value: seconds },
+  ];
+
+  return (
+    <div className="mx-6 mb-4 rounded-[20px] border border-rose-100 bg-gradient-to-r from-rose-50/80 to-orange-50/60 px-5 py-4 dark:border-rose-900/30 dark:from-rose-950/20 dark:to-orange-950/10">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-rose-500 dark:text-rose-400">
+          🎂 Birthday countdown
+        </p>
+        {isOwner && <VisibilityToggle isPublic={countdownPublic} saving={saving} onToggle={handleToggle} />}
+      </div>
+      <div className="flex items-center justify-center gap-2 sm:gap-4">
+        {units.map(({ label, value }) => (
+          <div key={label} className="flex flex-col items-center">
+            <span className="font-display text-3xl font-bold tabular-nums text-rose-700 dark:text-rose-300 sm:text-4xl">
+              {String(value).padStart(2, "0")}
+            </span>
+            <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        {days === 0
+          ? `It's almost ${name}'s birthday — just ${hours}h ${minutes}m to go!`
+          : `${days} day${days === 1 ? "" : "s"} until ${name}'s birthday`}
+      </p>
+    </div>
+  );
+}
+
+function VisibilityToggle({ isPublic, saving, onToggle, className }: {
+  isPublic: boolean; saving: boolean; onToggle: () => void; className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={saving}
+      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+        isPublic
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+          : "border-border bg-background/60 text-muted-foreground hover:bg-muted"
+      } ${className ?? ""}`}
+    >
+      {saving ? "Saving…" : isPublic ? "Public" : "Only me"}
+    </button>
   );
 }
 

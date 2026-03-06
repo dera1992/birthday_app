@@ -29,11 +29,13 @@ from apps.events.services import (
     apply_to_event,
     approve_application,
     cancel_event,
+    check_in_attendee,
     complete_event,
     confirm_venue,
     create_event_invite,
     decline_application,
     lock_event,
+    mark_no_show,
     publish_event,
     toggle_expand,
 )
@@ -336,6 +338,45 @@ class PackDetailView(APIView):
     def get(self, request, slug):
         pack = get_pack_by_slug(slug)
         return Response(CuratedPackReadSerializer(pack).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer(
+            name="CheckInRequest",
+            fields={
+                "contact_name": serializers.CharField(required=False, allow_blank=True),
+                "contact_email": serializers.EmailField(required=False, allow_blank=True),
+            },
+        ),
+        responses={200: inline_serializer(name="CheckInResponse", fields={"checked_in_at": serializers.DateTimeField()})},
+    ),
+)
+class EventCheckInView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        attendee = check_in_attendee(
+            event,
+            request.user,
+            contact_name=request.data.get("contact_name", ""),
+            contact_email=request.data.get("contact_email", ""),
+        )
+        return Response({"checked_in_at": attendee.checked_in_at})
+
+
+@extend_schema_view(
+    post=extend_schema(request=None, responses={200: inline_serializer(name="NoShowResponse", fields={"status": serializers.CharField()})}),
+)
+class EventNoShowView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id, user_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        attendee = mark_no_show(event, attendee_user_id=user_id, actor=request.user)
+        return Response({"status": attendee.status})
 
 
 def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:

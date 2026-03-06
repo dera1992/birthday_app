@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.events.models import BirthdayEvent, EventApplication, EventInvite
+from apps.events.models import BirthdayEvent, EventApplication, EventAttendee, EventInvite
 from apps.events.pack_serializers import CuratedPackReadSerializer
 from apps.events.write_serializers import PointFieldSerializer
 
@@ -11,6 +11,7 @@ class BirthdayEventReadSerializer(serializers.ModelSerializer):
     distance_meters = serializers.FloatField(read_only=True)
     host_profile = serializers.SerializerMethodField()
     my_application = serializers.SerializerMethodField()
+    my_checked_in_at = serializers.SerializerMethodField()
     pending_application_count = serializers.SerializerMethodField()
     pack = CuratedPackReadSerializer(read_only=True)
 
@@ -44,8 +45,10 @@ class BirthdayEventReadSerializer(serializers.ModelSerializer):
             "state",
             "venue_status",
             "venue_name",
+            "no_show_fee_percent",
             "lock_deadline_at",
             "approved_count",
+            "my_checked_in_at",
             "distance_meters",
             "my_application",
             "pending_application_count",
@@ -61,6 +64,13 @@ class BirthdayEventReadSerializer(serializers.ModelSerializer):
         if not app:
             return None
         return {"id": app.id, "status": app.status}
+
+    def get_my_checked_in_at(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+        attendee = obj.attendees.filter(user=request.user).first()
+        return attendee.checked_in_at if attendee else None
 
     def get_pending_application_count(self, obj):
         request = self.context.get("request")

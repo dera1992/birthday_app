@@ -5,6 +5,7 @@ from apps.events.views import (
     EventApplyView,
     EventApproveView,
     EventCancelView,
+    EventCheckInView,
     EventCompleteView,
     EventCreateView,
     EventDeclineView,
@@ -12,6 +13,7 @@ from apps.events.views import (
     EventFeedView,
     EventInviteView,
     EventLockView,
+    EventNoShowView,
     EventPublishView,
     EventToggleExpandView,
     EventVenueConfirmView,
@@ -40,4 +42,6 @@ urlpatterns = [
     path("events/<int:event_id>/lock", EventLockView.as_view(), name="event-lock"),
     path("events/<int:event_id>/cancel", EventCancelView.as_view(), name="event-cancel"),
     path("events/<int:event_id>/complete", EventCompleteView.as_view(), name="event-complete"),
+    path("events/<int:event_id>/check-in", EventCheckInView.as_view(), name="event-check-in"),
+    path("events/<int:event_id>/attendees/<int:user_id>/no-show", EventNoShowView.as_view(), name="event-no-show"),
 ]

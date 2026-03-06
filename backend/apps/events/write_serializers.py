@@ -54,6 +54,7 @@ class BirthdayEventWriteSerializer(serializers.ModelSerializer):
             "target_amount",
             "currency",
             "expense_breakdown",
+            "no_show_fee_percent",
             "lock_deadline_at",
         )
 

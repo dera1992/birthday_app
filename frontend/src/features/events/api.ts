@@ -212,3 +212,27 @@ export function useRequestRefund(eventId: number) {
       }),
   });
 }
+
+export function useCheckIn(eventId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { contact_name?: string; contact_email?: string }) =>
+      apiRequest<{ checked_in_at: string }>(`/events/${eventId}/check-in`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["event", eventId] }),
+  });
+}
+
+export function useMarkNoShow(eventId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) =>
+      apiRequest<{ status: string }>(`/events/${eventId}/attendees/${userId}/no-show`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-applications", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+    },
+  });
+}

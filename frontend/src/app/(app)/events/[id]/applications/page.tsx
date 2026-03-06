@@ -22,6 +22,7 @@ import {
   useEvent,
   useEventInvites,
   useLock,
+  useMarkNoShow,
   usePublishEvent,
   useToggleExpand,
 } from "@/features/events/api";
@@ -45,6 +46,7 @@ export default function EventApplicationsPage() {
   const confirmVenue = useConfirmVenue(eventId);
   const lock = useLock(eventId);
   const cancel = useCancelEvent(eventId);
+  const markNoShow = useMarkNoShow(eventId);
   const venueRecsQuery = useEventVenueRecommendations(eventId, null);
   const event = eventQuery.data;
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -56,6 +58,9 @@ export default function EventApplicationsPage() {
   const filteredVenues = venueSearch.trim()
     ? allVenues.filter((v) => v.name.toLowerCase().includes(venueSearch.toLowerCase()))
     : allVenues;
+  const isUnknownVenue =
+    venueSearch.trim().length > 2 &&
+    !allVenues.some((v) => v.name.toLowerCase() === venueSearch.trim().toLowerCase());
 
   async function onConfirmVenue(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -195,6 +200,11 @@ export default function EventApplicationsPage() {
                     </li>
                   ))}
                 </ul>
+              ) : null}
+              {isUnknownVenue ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  This venue is not in our partner list. Please ensure it is a publicly accessible location, not a private home address.
+                </p>
               ) : null}
             </div>
             <Button className="md:self-end" type="submit" disabled={!venueSearch.trim() || confirmVenue.isPending}>
@@ -362,7 +372,7 @@ export default function EventApplicationsPage() {
                   </div>
                 </div>
               ) : null}
-              <div className="mt-4 flex gap-3">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <Button
                   variant="outline"
                   onClick={() => runAction(() => approve.mutateAsync(application.id), "Application approved.", "Unable to approve application.")}
@@ -375,6 +385,21 @@ export default function EventApplicationsPage() {
                 >
                   Decline
                 </Button>
+                {application.status === "APPROVED" && event && new Date() >= new Date(event.start_at) ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-rose-600 hover:text-rose-700"
+                    disabled={markNoShow.isPending}
+                    onClick={() => runAction(
+                      () => markNoShow.mutateAsync(application.applicant),
+                      "No-show recorded.",
+                      "Unable to mark no-show."
+                    )}
+                  >
+                    Mark no-show
+                  </Button>
+                ) : null}
               </div>
             </div>
           ))}

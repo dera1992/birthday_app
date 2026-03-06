@@ -30,6 +30,7 @@ export const eventCreateSchema = z.object({
   target_amount: z.string().optional(),
   currency: z.string().min(3),
   expense_breakdown: z.string().min(10),
+  no_show_fee_percent: z.number().min(0).max(100).default(0),
   lock_deadline_at: z.string().min(1),
   criteria: z.object({
     verified_only: z.boolean().default(false),

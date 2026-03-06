@@ -314,3 +314,59 @@ def complete_event(event: BirthdayEvent, actor):
     event.state = BirthdayEvent.STATE_COMPLETED
     event.save(update_fields=["state", "updated_at"])
     return event
+
+
+def check_in_attendee(event: BirthdayEvent, actor, contact_name: str = "", contact_email: str = ""):
+    """Mark an attendee as checked in. Optionally send a safety share email."""
+    if event.state not in {BirthdayEvent.STATE_LOCKED, BirthdayEvent.STATE_CONFIRMED}:
+        raise ValidationError("Check-in is only available once the event is locked.")
+    attendee = event.attendees.filter(user=actor, status=EventAttendee.STATUS_ACTIVE).first()
+    if not attendee:
+        raise PermissionDenied("You are not an active attendee of this event.")
+    if attendee.checked_in_at:
+        raise ValidationError("You have already checked in.")
+    attendee.checked_in_at = timezone.now()
+    attendee.save(update_fields=["checked_in_at"])
+    if contact_name and contact_email:
+        from apps.events.emails import send_safety_share
+        transaction.on_commit(lambda: send_safety_share(event, actor, contact_name, contact_email))
+    return attendee
+
+
+@transaction.atomic
+def mark_no_show(event: BirthdayEvent, attendee_user_id: int, actor):
+    """Host marks an attendee as no-show after the event has started."""
+    if event.host != actor:
+        raise PermissionDenied("Only the host can mark no-shows.")
+    if timezone.now() < event.start_at:
+        raise ValidationError("No-shows can only be recorded after the event has started.")
+    attendee = event.attendees.select_for_update().filter(
+        user_id=attendee_user_id, status=EventAttendee.STATUS_ACTIVE
+    ).first()
+    if not attendee:
+        raise ValidationError("Attendee not found or already marked.")
+    attendee.status = EventAttendee.STATUS_NO_SHOW
+    attendee.save(update_fields=["status"])
+
+    # If their payment is still in escrow (edge case: pre-lock cancel scenario), apply partial refund
+    payment = EventPayment.objects.filter(
+        event=event, attendee_id=attendee_user_id, status=EventPayment.STATUS_HELD_ESCROW
+    ).first()
+    if payment and event.no_show_fee_percent > 0:
+        from decimal import Decimal
+        penalty_ratio = Decimal(event.no_show_fee_percent) / 100
+        refund_amount = payment.amount * (1 - penalty_ratio)
+        if refund_amount > 0:
+            # Partial refund: pass a capped amount to the existing refund service
+            payment.amount = refund_amount  # temporary — refund service uses this
+            refund_event_payment(payment=payment)
+
+    fee_pct = event.no_show_fee_percent
+    attendee_user = attendee.user
+    transaction.on_commit(lambda: _send_no_show_email(event, attendee_user, fee_pct))
+    return attendee
+
+
+def _send_no_show_email(event, attendee_user, fee_percent):
+    from apps.events.emails import send_no_show_notification
+    send_no_show_notification(event, attendee_user, fee_percent)

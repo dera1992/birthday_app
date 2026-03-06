@@ -99,6 +99,7 @@ class BirthdayEvent(models.Model):
     state = models.CharField(max_length=16, choices=STATE_CHOICES, default=STATE_DRAFT)
     venue_status = models.CharField(max_length=16, choices=VENUE_STATUS_CHOICES, default=VENUE_NOT_SET)
     venue_name = models.CharField(max_length=255, blank=True)
+    no_show_fee_percent = models.PositiveSmallIntegerField(default=0)  # 0–100; % of deposit forfeited on no-show
     lock_deadline_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -158,6 +159,7 @@ class EventAttendee(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances")
     application = models.OneToOneField("events.EventApplication", on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
+    checked_in_at = models.DateTimeField(null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

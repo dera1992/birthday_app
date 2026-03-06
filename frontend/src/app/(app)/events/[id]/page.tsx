@@ -19,7 +19,7 @@ import { EmptyState, ErrorState, LoadingBlock } from "@/components/ui/state-bloc
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
 import { EventShareCard } from "@/features/events/components/event-share-card";
-import { useApplyToEvent, useConfirmVenue, useEvent } from "@/features/events/api";
+import { useApplyToEvent, useCheckIn, useConfirmVenue, useEvent } from "@/features/events/api";
 import { useRateVenue, useVenueClick } from "@/features/venues/api";
 import { useEventVenueRecommendations } from "@/features/packs/api";
 import { useCreateBlock, useCreateEventRating, useCreateReport } from "@/features/safety/api";
@@ -102,6 +102,10 @@ export default function EventDetailPage() {
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
+  const [showCheckinForm, setShowCheckinForm] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const checkIn = useCheckIn(eventId);
 
   useEffect(() => {
     getBrowserCoordinates().then(setUserCoords).catch(() => {});
@@ -236,6 +240,9 @@ export default function EventDetailPage() {
               <Badge>{event.category}</Badge>
               <Badge variant="outline">{event.state}</Badge>
               <Badge variant="warning">Refund guarantee</Badge>
+              {(event.no_show_fee_percent ?? 0) > 0 ? (
+                <Badge variant="outline">{event.no_show_fee_percent}% no-show penalty</Badge>
+              ) : null}
               {event.pack ? (
                 <Badge variant="outline">
                   {event.pack.icon_emoji} {event.pack.name}
@@ -752,6 +759,65 @@ export default function EventDetailPage() {
               </Card>
             )}
           </>
+        ) : null}
+
+        {/* Check-in — approved attendees only, event locked/confirmed */}
+        {user && !isHost && myApplication?.status === "APPROVED" &&
+          (event.state === "LOCKED" || event.state === "CONFIRMED") ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Check in</CardTitle>
+              <CardDescription>
+                {event.my_checked_in_at || checkIn.isSuccess
+                  ? "You are checked in."
+                  : "Tap to confirm you are at the event. Optionally share details with an emergency contact."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {event.my_checked_in_at || checkIn.isSuccess ? (
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-medium">Checked in</span>
+                </div>
+              ) : showCheckinForm ? (
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Emergency contact name (optional)"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                  />
+                  <Input
+                    type="email"
+                    placeholder="Emergency contact email (optional)"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1"
+                      disabled={checkIn.isPending}
+                      onClick={async () => {
+                        try {
+                          await checkIn.mutateAsync({ contact_name: contactName, contact_email: contactEmail });
+                          toast.success("Checked in! Stay safe.");
+                          setShowCheckinForm(false);
+                        } catch (err) {
+                          toast.error(getErrorMessage(err, "Unable to check in."));
+                        }
+                      }}
+                    >
+                      {checkIn.isPending ? "Checking in…" : "Confirm check-in"}
+                    </Button>
+                    <Button variant="ghost" onClick={() => setShowCheckinForm(false)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button className="w-full" onClick={() => setShowCheckinForm(true)}>
+                  I&apos;m here — check in
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         ) : null}
 
         <Card className="bg-gradient-to-br from-rose-500 to-red-500 text-white">

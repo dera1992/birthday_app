@@ -176,6 +176,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.wallet.tasks.run_auto_payouts",
         "schedule": crontab(hour=3, minute=0),  # 03:00 daily
     },
+    "birthday-reminders-daily": {
+        "task": "apps.birthdays.tasks.send_birthday_reminders",
+        "schedule": crontab(hour=8, minute=0),  # 08:00 daily
+    },
+    "moderation-queue-hourly": {
+        "task": "apps.birthdays.tasks.process_moderation_queue",
+        "schedule": crontab(minute=0),  # top of every hour
+    },
+    "event-reminders-hourly": {
+        "task": "apps.events.tasks.send_event_reminders",
+        "schedule": crontab(minute=0),  # top of every hour
+    },
 }
 
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", "")

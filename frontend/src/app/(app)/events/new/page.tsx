@@ -204,6 +204,7 @@ export default function NewEventPage() {
       target_amount: "280.00",
       currency: "GBP",
       expense_breakdown: "Venue booking: 120\nFood and drinks: 110\nCake and decor: 50",
+      no_show_fee_percent: 0,
       lock_deadline_at: "",
       criteria: {
         verified_only: true,
@@ -477,6 +478,20 @@ export default function NewEventPage() {
             <div className="space-y-2">
               <Label>Lock deadline</Label>
               <Input type="datetime-local" {...form.register("lock_deadline_at")} />
+            </div>
+            <div className="space-y-2">
+              <Label>No-show penalty (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step={5}
+                placeholder="0"
+                {...form.register("no_show_fee_percent", { valueAsNumber: true })}
+              />
+              <p className="text-xs text-muted-foreground">
+                % of deposit forfeited if a confirmed attendee does not show up. 0 = no penalty.
+              </p>
             </div>
             <div className="space-y-2 lg:col-span-2">
               <Label>Expense breakdown</Label>
