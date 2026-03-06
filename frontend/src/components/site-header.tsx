@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarHeart, ChevronDown, LayoutDashboard, LogOut, MapPin, Moon, PartyPopper, Search, Settings, Wallet } from "lucide-react";
+import { CalendarCheck, CalendarDays, CalendarHeart, ChevronDown, LayoutDashboard, LogOut, MapPin, Moon, PartyPopper, Search, Settings, Wallet } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,8 @@ function UserMenu() {
           <div className="p-1.5">
             {[
               { href: "/", label: "Dashboard", icon: LayoutDashboard },
+              { href: "/events", label: "Events feed", icon: CalendarDays },
+              { href: "/events/mine", label: "My events", icon: CalendarCheck },
               { href: "/wallet", label: "Wallet", icon: Wallet },
               { href: "/settings", label: "Settings", icon: Settings },
             ].map(({ href, label, icon: Icon }) => (

@@ -175,7 +175,7 @@ function WishlistItemRow({
 
   async function handleSave() {
     try {
-      await updateMutation.mutateAsync({ title: editTitle, description: editDescription, price: editPrice || null, external_url: editUrl || null });
+      await updateMutation.mutateAsync({ title: editTitle, description: editDescription, price: editPrice || null, external_url: editUrl || "" });
       toast.success("Item updated.");
       setEditing(false);
     } catch (err) {
