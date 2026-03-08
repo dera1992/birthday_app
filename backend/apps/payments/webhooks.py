@@ -39,6 +39,10 @@ def handle_payment_intent_succeeded(data_object: dict):
         )
         mark_gift_purchase_succeeded(purchase, charge_id=data_object.get("latest_charge", ""))
         credit_gift_earned(purchase)
+        # Enqueue AI generation if this is an AI gift product
+        if purchase.product.is_ai_generated_product:
+            from apps.gifts.tasks import generate_ai_gift_options_task
+            generate_ai_gift_options_task.delay(purchase.id)
         return
 
     payment = EventPayment.objects.get(stripe_payment_intent_id=data_object["id"])

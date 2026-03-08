@@ -25,9 +25,10 @@ class WishlistReservationAdmin(admin.ModelAdmin):
 
 @admin.register(SupportMessage)
 class SupportMessageAdmin(admin.ModelAdmin):
-    list_display = ("profile", "sender_name", "moderation_status", "created_at")
-    search_fields = ("profile__slug", "sender_name", "body")
+    list_display = ("profile", "sender_name", "moderation_status", "celebrant_reaction", "created_at")
+    search_fields = ("profile__slug", "sender_name", "body", "reply_text")
     list_filter = ("moderation_status",)
+    readonly_fields = ("created_at", "reply_created_at")
 
 
 @admin.register(SupportContribution)

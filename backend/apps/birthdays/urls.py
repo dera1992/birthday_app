@@ -7,7 +7,9 @@ from apps.birthdays.views import (
     SupportContributionCollectionView,
     SupportContributionIntentView,
     SupportMessageCollectionView,
+    SupportMessageReactView,
     SupportMessageRejectView,
+    SupportMessageReplyView,
     WishlistItemCreateView,
     WishlistItemDetailView,
     WishlistReserveView,
@@ -29,4 +31,6 @@ urlpatterns = [
     ),
     path("support-messages/<int:message_id>/approve", SupportMessageApproveView.as_view(), name="support-message-approve"),
     path("support-messages/<int:message_id>/reject", SupportMessageRejectView.as_view(), name="support-message-reject"),
+    path("support-messages/<int:message_id>/react", SupportMessageReactView.as_view(), name="support-message-react"),
+    path("support-messages/<int:message_id>/reply", SupportMessageReplyView.as_view(), name="support-message-reply"),
 ]

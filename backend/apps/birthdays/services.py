@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -67,6 +68,27 @@ def moderate_support_message(message: SupportMessage, actor, status_value: str):
         raise ValidationError("Invalid moderation status.")
     message.moderation_status = status_value
     message.save(update_fields=["moderation_status"])
+    return message
+
+
+def react_to_support_message(message: SupportMessage, actor, reaction: str):
+    if message.profile.user != actor:
+        raise PermissionDenied("Only the profile owner can react to messages.")
+    if message.moderation_status != SupportMessage.MODERATION_APPROVED:
+        raise ValidationError("Only approved messages can be reacted to.")
+    message.celebrant_reaction = reaction.strip()
+    message.save(update_fields=["celebrant_reaction"])
+    return message
+
+
+def reply_to_support_message(message: SupportMessage, actor, reply_text: str):
+    if message.profile.user != actor:
+        raise PermissionDenied("Only the profile owner can reply to messages.")
+    if message.moderation_status != SupportMessage.MODERATION_APPROVED:
+        raise ValidationError("Only approved messages can be replied to.")
+    message.reply_text = reply_text.strip()
+    message.reply_created_at = timezone.now()
+    message.save(update_fields=["reply_text", "reply_created_at"])
     return message
 
 

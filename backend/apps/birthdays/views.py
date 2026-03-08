@@ -35,6 +35,8 @@ from apps.birthdays.services import (
     generate_unique_profile_slug,
     get_user_display_seed,
     moderate_support_message,
+    react_to_support_message,
+    reply_to_support_message,
 )
 from apps.payments.services import create_support_contribution_payment_intent
 from apps.safety.services import assert_not_blocked
@@ -166,6 +168,8 @@ class SupportMessageCollectionView(APIView):
     def post(self, request, slug):
         profile = self.get_profile(slug)
         if request.user.is_authenticated:
+            if request.user == profile.user:
+                return Response({"detail": "You cannot send a message to your own birthday profile."}, status=status.HTTP_400_BAD_REQUEST)
             assert_not_blocked(request.user, profile.user)
         serializer = SupportMessageWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -255,4 +259,40 @@ class SupportMessageRejectView(APIView):
     def post(self, request, message_id):
         message = get_support_message_for_owner(message_id, request.user)
         moderate_support_message(message, request.user, SupportMessage.MODERATION_REJECTED)
+        return Response(SupportMessageReadSerializer(message).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer("SupportMessageReactRequest", fields={"reaction": serializers.CharField()}),
+        responses={200: SupportMessageReadSerializer},
+    ),
+)
+class SupportMessageReactView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, message_id):
+        message = get_support_message_for_owner(message_id, request.user)
+        reaction = request.data.get("reaction", "").strip()
+        if not reaction:
+            return Response({"detail": "reaction is required."}, status=status.HTTP_400_BAD_REQUEST)
+        react_to_support_message(message, request.user, reaction)
+        return Response(SupportMessageReadSerializer(message).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer("SupportMessageReplyRequest", fields={"reply_text": serializers.CharField()}),
+        responses={200: SupportMessageReadSerializer},
+    ),
+)
+class SupportMessageReplyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, message_id):
+        message = get_support_message_for_owner(message_id, request.user)
+        reply_text = request.data.get("reply_text", "").strip()
+        if not reply_text:
+            return Response({"detail": "reply_text is required."}, status=status.HTTP_400_BAD_REQUEST)
+        reply_to_support_message(message, request.user, reply_text)
         return Response(SupportMessageReadSerializer(message).data)

@@ -89,6 +89,11 @@ class SupportMessage(models.Model):
     moderation_status = models.CharField(max_length=16, choices=MODERATION_CHOICES, default=MODERATION_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Celebrant reaction / reply (only set on APPROVED messages, by profile owner)
+    celebrant_reaction = models.CharField(max_length=10, blank=True, help_text="Single emoji reaction from the celebrant.")
+    reply_text = models.TextField(blank=True)
+    reply_created_at = models.DateTimeField(null=True, blank=True)
+
 
 class SupportContribution(models.Model):
     STATUS_PENDING = "PENDING"

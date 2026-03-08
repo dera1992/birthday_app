@@ -30,7 +30,16 @@ class WishlistItemReadSerializer(serializers.ModelSerializer):
 class SupportMessageReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportMessage
-        fields = ("id", "sender_name", "body", "moderation_status", "created_at")
+        fields = (
+            "id",
+            "sender_name",
+            "body",
+            "moderation_status",
+            "created_at",
+            "celebrant_reaction",
+            "reply_text",
+            "reply_created_at",
+        )
 
 
 class BirthdayProfileReadSerializer(serializers.ModelSerializer):

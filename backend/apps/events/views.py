@@ -36,6 +36,7 @@ from apps.events.services import (
     decline_application,
     lock_event,
     mark_no_show,
+    propose_venue,
     publish_event,
     toggle_expand,
 )
@@ -226,6 +227,29 @@ class EventToggleExpandView(APIView):
         event = get_event_by_id(event_id)
         self.check_object_permissions(request, event)
         event = toggle_expand(event, request.user)
+        return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=inline_serializer(
+            name="EventVenueProposeRequest",
+            fields={"venue_name": serializers.CharField()},
+        ),
+        responses={200: BirthdayEventReadSerializer},
+    ),
+)
+class EventVenueProposeView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsEventHost]
+
+    def post(self, request, event_id):
+        event = get_event_by_id(event_id)
+        self.check_object_permissions(request, event)
+        event = propose_venue(
+            event,
+            request.user,
+            venue_name=request.data.get("venue_name", ""),
+        )
         return Response(BirthdayEventReadSerializer(event, context={"request": request}).data)
 
 

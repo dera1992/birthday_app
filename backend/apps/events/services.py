@@ -263,6 +263,17 @@ def toggle_expand(event: BirthdayEvent, actor):
     return event
 
 
+def propose_venue(event: BirthdayEvent, actor, venue_name: str):
+    if event.host != actor:
+        raise PermissionDenied("Only the host can propose a venue.")
+    if not venue_name:
+        raise ValidationError("venue_name is required.")
+    event.venue_status = BirthdayEvent.VENUE_PROPOSED
+    event.venue_name = venue_name
+    event.save(update_fields=["venue_status", "venue_name", "updated_at"])
+    return event
+
+
 def confirm_venue(event: BirthdayEvent, actor, venue_name: str = ""):
     if event.host != actor:
         raise PermissionDenied("Only the host can confirm the venue.")

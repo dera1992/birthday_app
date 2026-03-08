@@ -123,6 +123,114 @@ class BirthdayApiTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
+    def _make_profile_and_approved_message(self):
+        profile = BirthdayProfile.objects.create(
+            user=self.owner,
+            slug="react-reply-profile",
+            day=1, month=1, hide_year=True, bio="Bio", preferences={}, visibility="PUBLIC",
+        )
+        msg = SupportMessage.objects.create(
+            profile=profile,
+            sender_name="Sam",
+            body="Happy birthday!",
+            moderation_status=SupportMessage.MODERATION_APPROVED,
+        )
+        return profile, msg
+
+    def test_owner_cannot_send_message_to_own_profile(self):
+        profile = BirthdayProfile.objects.create(
+            user=self.owner, slug="self-message-profile", day=1, month=1, hide_year=True, bio="Bio", preferences={}, visibility="PUBLIC",
+        )
+        response = self.client.post(
+            f"/api/birthday-profile/{profile.slug}/messages",
+            {"sender_name": "Me", "body": "Happy birthday to me"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_celebrant_can_react_to_approved_message(self):
+        profile, msg = self._make_profile_and_approved_message()
+        response = self.client.post(f"/api/support-messages/{msg.id}/react", {"reaction": "❤️"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["celebrant_reaction"], "❤️")
+        msg.refresh_from_db()
+        self.assertEqual(msg.celebrant_reaction, "❤️")
+
+    def test_celebrant_can_reply_to_approved_message(self):
+        profile, msg = self._make_profile_and_approved_message()
+        response = self.client.post(f"/api/support-messages/{msg.id}/reply", {"reply_text": "Thank you!"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["reply_text"], "Thank you!")
+        self.assertIsNotNone(response.json()["reply_created_at"])
+        msg.refresh_from_db()
+        self.assertEqual(msg.reply_text, "Thank you!")
+        self.assertIsNotNone(msg.reply_created_at)
+
+    def test_react_rejected_if_message_not_approved(self):
+        profile = BirthdayProfile.objects.create(
+            user=self.owner, slug="pending-msg-profile", day=1, month=1, hide_year=True, bio="Bio", preferences={}, visibility="PUBLIC",
+        )
+        msg = SupportMessage.objects.create(
+            profile=profile, sender_name="Sam", body="Hello", moderation_status=SupportMessage.MODERATION_PENDING,
+        )
+        response = self.client.post(f"/api/support-messages/{msg.id}/react", {"reaction": "🎉"}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_reply_rejected_if_message_not_approved(self):
+        profile = BirthdayProfile.objects.create(
+            user=self.owner, slug="pending-reply-profile", day=1, month=1, hide_year=True, bio="Bio", preferences={}, visibility="PUBLIC",
+        )
+        msg = SupportMessage.objects.create(
+            profile=profile, sender_name="Sam", body="Hello", moderation_status=SupportMessage.MODERATION_PENDING,
+        )
+        response = self.client.post(f"/api/support-messages/{msg.id}/reply", {"reply_text": "Thanks!"}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_non_owner_cannot_react(self):
+        profile, msg = self._make_profile_and_approved_message()
+        stranger = User.objects.create_user(username="stranger-react", password="pw")
+        stranger_client = APIClient()
+        stranger_client.force_authenticate(user=stranger)
+        response = stranger_client.post(f"/api/support-messages/{msg.id}/react", {"reaction": "❤️"}, format="json")
+        self.assertEqual(response.status_code, 404)  # get_support_message_for_owner returns 404 for non-owners
+
+    def test_non_owner_cannot_reply(self):
+        profile, msg = self._make_profile_and_approved_message()
+        stranger = User.objects.create_user(username="stranger-reply", password="pw")
+        stranger_client = APIClient()
+        stranger_client.force_authenticate(user=stranger)
+        response = stranger_client.post(f"/api/support-messages/{msg.id}/reply", {"reply_text": "Thanks!"}, format="json")
+        self.assertEqual(response.status_code, 404)
+
+    def test_messages_ordered_newest_first(self):
+        profile = BirthdayProfile.objects.create(
+            user=self.owner, slug="ordering-profile", day=1, month=1, hide_year=True, bio="Bio", preferences={}, visibility="PUBLIC",
+        )
+        msg1 = SupportMessage.objects.create(
+            profile=profile, sender_name="First", body="First message", moderation_status=SupportMessage.MODERATION_APPROVED,
+        )
+        msg2 = SupportMessage.objects.create(
+            profile=profile, sender_name="Second", body="Second message", moderation_status=SupportMessage.MODERATION_APPROVED,
+        )
+        response = APIClient().get(f"/api/birthday-profile/{profile.slug}/messages")
+        self.assertEqual(response.status_code, 200)
+        ids = [m["id"] for m in response.json()]
+        self.assertEqual(ids, [msg2.id, msg1.id])
+
+    def test_reaction_and_reply_visible_in_public_response(self):
+        profile, msg = self._make_profile_and_approved_message()
+        msg.celebrant_reaction = "🎂"
+        msg.reply_text = "Thank you so much!"
+        from django.utils import timezone
+        msg.reply_created_at = timezone.now()
+        msg.save()
+        response = APIClient().get(f"/api/birthday-profile/{profile.slug}/messages")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()[0]
+        self.assertEqual(data["celebrant_reaction"], "🎂")
+        self.assertEqual(data["reply_text"], "Thank you so much!")
+        self.assertIsNotNone(data["reply_created_at"])
+
     def test_owner_can_list_their_support_contributions(self):
         profile = BirthdayProfile.objects.create(
             user=self.owner,

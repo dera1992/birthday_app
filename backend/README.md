@@ -310,6 +310,217 @@ Run the lock deadline scan manually:
 docker compose exec web python manage.py scan_lock_deadlines
 ```
 
+## Gift Engine
+
+Digital gifts are now data-driven. Non-technical admins can create templates and products from Django admin without changing frontend code.
+
+Admin workflow:
+- Open Django admin and create or edit a `GiftProduct`.
+- Choose a `renderer_type`.
+- Add `template_asset_url` and `preview_asset_url`.
+- Paste a JSON `customization_schema`.
+- Paste a JSON `layout_config`.
+- Optionally add `purchase_instructions`.
+- Publish by setting `is_active=true`.
+
+Relevant admin models:
+- `GiftProduct`
+- `GiftPurchase`
+- `GiftTemplate` (optional reusable asset/config source for backwards-compatible reuse)
+
+Supported renderer types:
+- `CARD_TEMPLATE`
+- `FLOWER_GIFT`
+- `ANIMATED_MESSAGE`
+- `BADGE_GIFT`
+- `VIDEO_TEMPLATE`
+
+Supported customization field types:
+- `text`
+- `textarea`
+- `select`
+- `color`
+- `number`
+- `toggle`
+
+Example schema:
+
+```json
+{
+  "fields": [
+    {
+      "name": "recipient_name",
+      "type": "text",
+      "label": "Recipient Name",
+      "required": true,
+      "max_length": 80
+    },
+    {
+      "name": "message",
+      "type": "textarea",
+      "label": "Birthday Message",
+      "required": true,
+      "max_length": 300
+    },
+    {
+      "name": "sender_name",
+      "type": "text",
+      "label": "From",
+      "required": false
+    },
+    {
+      "name": "theme_color",
+      "type": "select",
+      "label": "Theme Color",
+      "required": false,
+      "options": ["pink", "gold", "blue"]
+    },
+    {
+      "name": "show_confetti",
+      "type": "toggle",
+      "label": "Show Confetti",
+      "required": false
+    }
+  ]
+}
+```
+
+Example layout config:
+
+```json
+{
+  "title": {
+    "x": "50%",
+    "y": "20%",
+    "align": "center",
+    "fontSize": 40,
+    "fontWeight": 700,
+    "color": "#ffffff"
+  },
+  "message": {
+    "x": "50%",
+    "y": "45%",
+    "align": "center",
+    "fontSize": 24,
+    "fontWeight": 400,
+    "color": "#ffffff",
+    "maxWidth": "70%"
+  },
+  "sender": {
+    "x": "50%",
+    "y": "75%",
+    "align": "center",
+    "fontSize": 20,
+    "fontWeight": 500,
+    "color": "#ffffff"
+  }
+}
+```
+
+Gift engine commands:
+
+```bash
+docker compose exec web python manage.py seed_gift_products
+docker compose exec web python manage.py seed_ai_gift_products
+# Optional flags:
+docker compose exec web python manage.py seed_ai_gift_products --price 9.99 --currency usd --provider NANO_BANANA
+```
+
+Gift API additions:
+- `GET /api/gifts/catalog?category=`
+- `GET /api/gifts/products?category=` (legacy alias)
+- `GET /api/gifts/{slug}`
+- `GET /api/birthday-profile/{slug}/gifts`
+- `POST /api/birthday-profile/{slug}/gifts/create-intent`
+- `GET /api/gifts/purchases/{id}/generation-status`  — AI generation status polling
+- `POST /api/gifts/purchases/{id}/select-option`      — select AI design option
+- `GET /api/gifts/purchases/{id}/download`            — download (redirects to AI asset URL for AI gifts)
+
+Backward compatibility:
+- Existing gift products without templates still resolve a default renderer and schema.
+- Existing purchases without `customization_data` still render using legacy `from_name` and `custom_message`.
+- Legacy create-intent payloads using only `from_name` and `custom_message` are still accepted and mapped into `customization_data`.
+- AI fields on `GiftProduct` and `GiftPurchase` default to non-AI values, so all existing data is unaffected.
+
+---
+
+## AI Gift Products
+
+### Overview
+
+AI gift products are normal `GiftProduct` entries with `is_ai_generated_product=True`.
+They go through the standard payment flow but trigger post-payment AI image generation via Celery.
+
+### How it works
+
+1. User selects an AI gift product (e.g. "AI Birthday Card") and fills the form (celebrant name, message, style).
+2. `POST /api/birthday-profile/{slug}/gifts/create-intent` creates a `GiftPurchase` with:
+   - `generation_status = PENDING`
+   - `ai_prompt_input = { celebrant_name, sender_name, message, style }`
+3. Stripe PaymentIntent is created as usual.
+4. On `payment_intent.succeeded` webhook:
+   - `mark_gift_purchase_succeeded` and `credit_gift_earned` run (revenue split is identical to non-AI gifts).
+   - `generate_ai_gift_options_task.delay(purchase_id)` is queued.
+5. The Celery task calls Nano Banana, generates N design options, and saves them to `purchase.generated_options`.
+   `generation_status` → `GENERATED`.
+6. Frontend polls `GET .../generation-status` every 3 seconds until status is `GENERATED`.
+7. User sees 2 design options side-by-side and clicks "Choose this design".
+8. `POST .../select-option { "option_index": 0 }` → sets `selected_asset_url`, `ai_download_url`, `is_downloadable=True`, `generation_status=SELECTED`.
+9. The gift appears on the birthday gift wall using `selected_asset_url` as the displayed image.
+10. Buyer and celebrant can download via the `ai_download_url` or the download endpoint.
+
+### Revenue split
+
+Revenue split for AI gifts is **identical** to regular digital gifts:
+- `platform_amount = gross * platform_fee_bps / 10000`
+- `celebrant_amount = gross - platform_amount`
+- Wallet credit happens on `payment_intent.succeeded` before generation starts.
+
+### Nano Banana configuration
+
+Required env vars:
+
+| Variable | Description |
+|---|---|
+| `NANO_BANANA_API_KEY` | API key for Nano Banana |
+| `NANO_BANANA_MODEL` | Model to use (default: `flux-schnell`) |
+| `NANO_BANANA_BASE_URL` | Base URL (default: `https://api.nanabanana.ai/v1`) |
+
+The provider is abstracted in `apps/gifts/providers/`:
+- `base.py` — `BaseImageProvider` interface
+- `nano_banana.py` — Nano Banana HTTP client adapter
+
+To swap providers, implement `BaseImageProvider.generate_images()` and update `ai_generation_provider` on the product.
+
+### Prompt templates
+
+Default prompts are in `apps/gifts/ai_services.py` under `_DEFAULT_PROMPTS`.
+
+You can override them per-product using `GiftProduct.ai_prompt_template` in Django admin.
+Template variables: `{celebrant_name}`, `{sender_name}`, `{message}`, `{style}`.
+
+### AI Gift Assumptions (V1)
+
+- **Video products**: V1 generates a still cover image only. Full video generation is a future milestone. The product description communicates this to users.
+- **Asset storage**: In V1, `selected_asset_url` and `ai_download_url` point directly to provider-returned URLs. A future improvement is to copy the selected asset into project-controlled storage so URLs don't expire.
+- **Generation failure**: If Nano Banana fails after 3 retries, `generation_status` is set to `FAILED`. The buyer can contact support. Payment is not automatically refunded in V1.
+- **Option count**: Default is 2 options per AI gift. Configurable via `GiftProduct.ai_option_count`.
+- **Celery retries**: `generate_ai_gift_options_task` retries up to 3 times with exponential back-off (60 s, 120 s, 240 s base).
+
+### Admin
+
+- `GiftProduct` admin has an "AI Generation" fieldset (collapsible) with all AI-specific fields.
+- `GiftPurchase` admin shows `generation_status`, `selected_asset_url`, `ai_download_url`, and has an inline for `AIGenerationJob`.
+- `AIGenerationJob` admin lists provider, status, error messages for debugging.
+
+### Renderer Engine Assumptions
+
+- `GiftProduct.customization_schema` overrides `GiftTemplate.config_schema` when present.
+- `GiftProduct.renderer_type` overrides the template renderer when present.
+- `GiftProduct.template_asset_url` and `layout_config` override template-level assets/config when present.
+- Overlay text is rendered by React using `layout_config`; the asset files themselves do not need text placeholders.
+- Legacy products are auto-mapped to a default renderer, schema, and layout config so the frontend stays data-driven.
+
 ## Manual Test Flow
 
 1. Register a host and guest, then verify the guest phone and email.
