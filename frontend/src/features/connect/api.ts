@@ -21,3 +21,9 @@ export function useConnectOnboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["connect-status"] }),
   });
 }
+
+export function useConnectDashboard() {
+  return useMutation({
+    mutationFn: () => apiRequest<{ url: string }>("/connect/dashboard", { method: "POST" }),
+  });
+}

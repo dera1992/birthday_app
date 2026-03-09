@@ -19,7 +19,7 @@ import { EmptyState, ErrorState, LoadingBlock } from "@/components/ui/state-bloc
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
 import { EventShareCard } from "@/features/events/components/event-share-card";
-import { useApplyToEvent, useCheckIn, useConfirmVenue, useEvent } from "@/features/events/api";
+import { useApplyToEvent, useCheckIn, useProposeVenue, useEvent } from "@/features/events/api";
 import { useRateVenue, useVenueClick } from "@/features/venues/api";
 import { useEventVenueRecommendations } from "@/features/packs/api";
 import { useCreateBlock, useCreateEventRating, useCreateReport } from "@/features/safety/api";
@@ -85,7 +85,7 @@ export default function EventDetailPage() {
   const eventQuery = useEvent(eventId);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const applyMutation = useApplyToEvent(eventId);
-  const confirmVenueMutation = useConfirmVenue(eventId);
+  const proposeVenueMutation = useProposeVenue(eventId);
   const venueClick = useVenueClick();
   const rateVenue = useRateVenue(eventId);
   const venueRecsQuery = useEventVenueRecommendations(eventId, userCoords);
@@ -143,10 +143,10 @@ export default function EventDetailPage() {
 
   async function handlePickVenue(venueName: string) {
     try {
-      await confirmVenueMutation.mutateAsync({ venue_name: venueName });
-      toast.success(`"${venueName}" set as your confirmed venue.`);
+      await proposeVenueMutation.mutateAsync({ venue_name: venueName });
+      toast.success(`"${venueName}" proposed as venue. Confirm availability in Host management.`);
     } catch (err) {
-      toast.error(getErrorMessage(err, "Unable to confirm venue."));
+      toast.error(getErrorMessage(err, "Unable to propose venue."));
     }
   }
 
@@ -521,15 +521,19 @@ export default function EventDetailPage() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     {activeGroup.venues.map((venue) => {
-                      const isConfirmed = event.venue_name
+                      const isThisVenue = event.venue_name
                         ? venue.name.toLowerCase() === event.venue_name.toLowerCase()
                         : false;
+                      const isConfirmed = isThisVenue && event.venue_status === "CONFIRMED";
+                      const isProposed = isThisVenue && event.venue_status === "PROPOSED";
                       return (
-                      <div key={venue.id} className="rounded-[24px] border border-border bg-background/70 p-5">
+                      <div key={venue.id} className={`rounded-[24px] border p-5 ${isConfirmed ? "border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/20" : isProposed ? "border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/20" : "border-border bg-background/70"}`}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">
                             {isConfirmed ? (
                               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                            ) : isProposed ? (
+                              <Circle className="h-4 w-4 shrink-0 text-amber-500" />
                             ) : null}
                             <p className="font-semibold">{venue.name}</p>
                           </div>
@@ -585,7 +589,7 @@ export default function EventDetailPage() {
                             <Button
                               className="w-full"
                               onClick={() => handlePickVenue(venue.name)}
-                              disabled={confirmVenueMutation.isPending}
+                              disabled={proposeVenueMutation.isPending}
                             >
                               Use as venue
                             </Button>

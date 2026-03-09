@@ -38,6 +38,49 @@ def credit_gift_earned(purchase: GiftPurchase) -> WalletLedgerEntry:
 
 
 @transaction.atomic
+def credit_contribution_earned(contribution) -> WalletLedgerEntry:
+    """Called after payment_intent.succeeded for a wishlist_contribution.
+    Credits celebrant_amount (gross minus platform fee) to the profile owner's wallet."""
+    owner = contribution.item.profile.user
+    wallet = get_or_create_wallet(owner)
+    credit = contribution.celebrant_amount if contribution.celebrant_amount else contribution.amount
+    entry = WalletLedgerEntry.objects.create(
+        user=owner,
+        type=WalletLedgerEntry.Type.CONTRIBUTION_EARNED,
+        amount=credit,
+        currency=contribution.currency.lower(),
+        status=WalletLedgerEntry.Status.PENDING,
+        source_wishlist_contribution=contribution,
+    )
+    WalletAccount.objects.filter(pk=wallet.pk).update(
+        pending_balance=wallet.pending_balance + credit
+    )
+    return entry
+
+
+@transaction.atomic
+def credit_event_payment_earned(payment) -> WalletLedgerEntry:
+    """Called after payment_intent.succeeded for an event payment.
+    Credits celebrant_amount (gross minus platform fee) to the event host's wallet."""
+    event = payment.event
+    owner = event.payee_user or event.host
+    wallet = get_or_create_wallet(owner)
+    credit = payment.celebrant_amount if payment.celebrant_amount else payment.amount
+    entry = WalletLedgerEntry.objects.create(
+        user=owner,
+        type=WalletLedgerEntry.Type.EVENT_REGISTRATION_EARNED,
+        amount=credit,
+        currency=payment.currency.lower(),
+        status=WalletLedgerEntry.Status.PENDING,
+        source_event_payment=payment,
+    )
+    WalletAccount.objects.filter(pk=wallet.pk).update(
+        pending_balance=wallet.pending_balance + credit
+    )
+    return entry
+
+
+@transaction.atomic
 def release_pending_entry(entry: WalletLedgerEntry) -> WalletLedgerEntry:
     """Move a PENDING ledger entry to AVAILABLE (fraud buffer lifted)."""
     if entry.status != WalletLedgerEntry.Status.PENDING:

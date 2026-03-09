@@ -6,8 +6,10 @@ import type {
   BirthdayProfile,
   BirthdayWishlistItem,
   BirthdayWishlistReservation,
+  ReferralProduct,
   SupportContribution,
   SupportContributionIntentResponse,
+  WishlistContributionIntentResponse,
 } from "@/lib/api/types";
 
 export function useBirthdayProfile(slug: string) {
@@ -165,6 +167,30 @@ export function useSupportMessageReject(slug: string) {
   });
 }
 
+export function useSupportMessageReact(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, reaction }: { messageId: number; reaction: string }) =>
+      apiRequest<BirthdayMessage>(`/support-messages/${messageId}/react`, {
+        method: "POST",
+        body: JSON.stringify({ reaction }),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["birthday-messages", slug] }),
+  });
+}
+
+export function useSupportMessageReply(slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, reply_text }: { messageId: number; reply_text: string }) =>
+      apiRequest<BirthdayMessage>(`/support-messages/${messageId}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ reply_text }),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["birthday-messages", slug] }),
+  });
+}
+
 export function useBirthdayContributions(slug: string, enabled: boolean) {
   return useQuery({
     queryKey: ["birthday-contributions", slug],
@@ -181,5 +207,39 @@ export function useSupportContributionIntent(slug: string) {
         auth: false,
         body: JSON.stringify(payload),
       }),
+  });
+}
+
+export function usePublicWishlist(slug: string) {
+  return useQuery({
+    queryKey: ["public-wishlist", slug],
+    queryFn: () => apiRequest<BirthdayWishlistItem[]>(`/birthday-profile/${slug}/public-wishlist`),
+    enabled: Boolean(slug),
+  });
+}
+
+export function useWishlistContributionIntent(itemId: number) {
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      apiRequest<WishlistContributionIntentResponse>(`/wishlist-items/${itemId}/contributions/create-intent`, {
+        method: "POST",
+        auth: false,
+        body: JSON.stringify(payload),
+      }),
+  });
+}
+
+export function useReferralProducts(category?: string) {
+  return useQuery({
+    queryKey: ["referral-products", category ?? ""],
+    queryFn: () =>
+      apiRequest<ReferralProduct[]>(`/referral-products${category ? `?category=${category}` : ""}`),
+  });
+}
+
+export function useReferralProductClick() {
+  return useMutation({
+    mutationFn: (productId: number) =>
+      apiRequest<{ affiliate_url: string }>(`/referral-products/${productId}/click`, { method: "POST" }),
   });
 }

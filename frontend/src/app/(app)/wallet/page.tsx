@@ -11,8 +11,27 @@ import { ErrorNotice } from "@/components/ui/error-notice";
 import { Input } from "@/components/ui/input";
 import { ErrorState, LoadingBlock } from "@/components/ui/state-block";
 import { useWallet, useWalletLedger, useWithdraw, useUpdateWallet } from "@/features/wallet/api";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api/client";
 import { getErrorMessage } from "@/lib/api/errors";
 import { formatCurrency, formatDate } from "@/lib/utils";
+
+type PaymentHistoryEntry = {
+  id: string;
+  type: "GIFT" | "CONTRIBUTION" | "EVENT_REGISTRATION";
+  description: string;
+  to: string;
+  amount: string;
+  currency: string;
+  reference: string;
+  created_at: string;
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  GIFT: "🎁 Digital Gift",
+  CONTRIBUTION: "💝 Wishlist Contribution",
+  EVENT_REGISTRATION: "🎟️ Event Registration",
+};
 
 const LEDGER_STATUS_VARIANT: Record<string, "success" | "warning" | "outline"> = {
   AVAILABLE: "success",
@@ -25,6 +44,10 @@ export default function WalletPage() {
   const ledgerQuery = useWalletLedger();
   const withdrawMutation = useWithdraw();
   const updateWallet = useUpdateWallet();
+  const paymentHistoryQuery = useQuery({
+    queryKey: ["payment-history"],
+    queryFn: () => apiRequest<PaymentHistoryEntry[]>("/payments/history"),
+  });
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -70,7 +93,7 @@ export default function WalletPage() {
       <div>
         <h1 className="font-display text-3xl">Wallet</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Earnings from digital gifts appear here. Funds are held for 5 days before becoming available to withdraw.
+          Earnings from gifts, contributions, and event registrations appear here. Funds are held for 5 days before becoming available to withdraw.
         </p>
       </div>
 
@@ -184,21 +207,78 @@ export default function WalletPage() {
             <p className="text-sm text-muted-foreground">No transactions yet.</p>
           ) : null}
           <div className="space-y-2">
-            {(ledgerQuery.data ?? []).map((entry) => (
+            {(ledgerQuery.data ?? []).map((entry) => {
+              const typeLabel: Record<string, string> = {
+                GIFT_EARNED: "🎁 Digital Gift",
+                GIFT_REFUND_REVERSAL: "↩️ Gift Refund",
+                CONTRIBUTION_EARNED: "💝 Wishlist Contribution",
+                EVENT_REGISTRATION_EARNED: "🎟️ Event Registration",
+                PAYOUT: "💸 Payout",
+                ADJUSTMENT: "⚙️ Adjustment",
+              };
+              return (
+                <div
+                  key={entry.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-border bg-background/70 px-4 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{typeLabel[entry.type] ?? entry.type.replaceAll("_", " ")}</p>
+                    {entry.source_description ? (
+                      <p className="text-xs text-muted-foreground truncate">{entry.source_description}</p>
+                    ) : null}
+                    {entry.sender_name ? (
+                      <p className="text-xs text-muted-foreground truncate">
+                        From: {entry.sender_name}{entry.sender_email ? ` · ${entry.sender_email}` : ""}
+                      </p>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">{formatDate(entry.created_at)}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge variant={LEDGER_STATUS_VARIANT[entry.status] ?? "outline"}>{entry.status}</Badge>
+                    <p className={`font-semibold tabular-nums ${Number(entry.amount) < 0 ? "text-destructive" : "text-emerald-600"}`}>
+                      {Number(entry.amount) >= 0 ? "+" : ""}
+                      {formatCurrency(entry.amount, entry.currency.toUpperCase())}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payments made by this user */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Payments made</CardTitle>
+          <CardDescription>Gifts sent, wishlist contributions, and event registrations you have paid for.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {paymentHistoryQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading payments...</p>
+          ) : null}
+          {!paymentHistoryQuery.isLoading && !(paymentHistoryQuery.data ?? []).length ? (
+            <p className="text-sm text-muted-foreground">No payments made yet.</p>
+          ) : null}
+          <div className="space-y-2">
+            {(paymentHistoryQuery.data ?? []).map((entry) => (
               <div
                 key={entry.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-border bg-background/70 px-4 py-3"
               >
-                <div>
-                  <p className="text-sm font-medium">{entry.type.replaceAll("_", " ")}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{TYPE_LABEL[entry.type] ?? entry.type}</p>
+                  <p className="text-xs text-muted-foreground truncate">{entry.description}</p>
+                  <p className="text-xs text-muted-foreground">To: {entry.to}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(entry.created_at)}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant={LEDGER_STATUS_VARIANT[entry.status] ?? "outline"}>{entry.status}</Badge>
-                  <p className={`font-semibold ${Number(entry.amount) < 0 ? "text-destructive" : "text-emerald-600"}`}>
-                    {Number(entry.amount) >= 0 ? "+" : ""}
-                    {formatCurrency(entry.amount, entry.currency.toUpperCase())}
+                <div className="shrink-0 text-right">
+                  <p className="font-semibold tabular-nums text-destructive">
+                    -{formatCurrency(entry.amount, entry.currency)}
                   </p>
+                  {entry.reference ? (
+                    <p className="text-xs text-muted-foreground font-mono truncate max-w-[140px]">{entry.reference.slice(-12)}</p>
+                  ) : null}
                 </div>
               </div>
             ))}

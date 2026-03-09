@@ -6,19 +6,23 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, inline_seri
 
 from common.permissions import IsProfileOwner
 from common.schema import detail_response_serializer
-from apps.birthdays.models import BirthdayProfile, SupportMessage
+from apps.birthdays.models import BirthdayProfile, SupportMessage, WishlistContribution
 from apps.birthdays.selectors import (
+    get_active_referral_products,
     get_contributions_for_owner,
     get_profile_by_slug,
     get_profile_for_user,
+    get_public_wishlist_items,
     get_support_message_for_owner,
     get_wishlist_item,
     get_wishlist_item_for_user,
 )
 from apps.birthdays.read_serializers import (
     BirthdayProfileReadSerializer,
+    ReferralProductReadSerializer,
     SupportContributionReadSerializer,
     SupportMessageReadSerializer,
+    WishlistContributionReadSerializer,
     WishlistItemReadSerializer,
     WishlistReservationReadSerializer,
 )
@@ -26,10 +30,12 @@ from apps.birthdays.write_serializers import (
     BirthdayProfileWriteSerializer,
     SupportContributionWriteSerializer,
     SupportMessageWriteSerializer,
+    WishlistContributionWriteSerializer,
     WishlistItemWriteSerializer,
     WishlistReservationWriteSerializer,
 )
 from apps.birthdays.services import (
+    assert_contribution_allowed,
     can_view_profile,
     cancel_wishlist_reservation,
     generate_unique_profile_slug,
@@ -38,7 +44,7 @@ from apps.birthdays.services import (
     react_to_support_message,
     reply_to_support_message,
 )
-from apps.payments.services import create_support_contribution_payment_intent
+from apps.payments.services import create_support_contribution_payment_intent, create_wishlist_contribution_payment_intent
 from apps.safety.services import assert_not_blocked
 
 
@@ -296,3 +302,90 @@ class SupportMessageReplyView(APIView):
             return Response({"detail": "reply_text is required."}, status=status.HTTP_400_BAD_REQUEST)
         reply_to_support_message(message, request.user, reply_text)
         return Response(SupportMessageReadSerializer(message).data)
+
+
+@extend_schema_view(
+    get=extend_schema(responses={200: WishlistItemReadSerializer(many=True)}),
+)
+class PublicWishlistItemListView(APIView):
+    """Public endpoint: returns publicly visible items for a profile."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, slug):
+        profile = get_profile_by_slug(slug)
+        if not can_view_profile(profile, request.user):
+            return Response({"detail": "This birthday profile is private."}, status=status.HTTP_403_FORBIDDEN)
+        items = get_public_wishlist_items(profile)
+        return Response(WishlistItemReadSerializer(items, many=True).data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=WishlistContributionWriteSerializer,
+        responses={
+            201: inline_serializer(
+                name="WishlistContributionIntentResponse",
+                fields={
+                    "contribution": WishlistContributionReadSerializer(),
+                    "client_secret": serializers.CharField(allow_null=True),
+                    "detail": serializers.CharField(),
+                },
+            )
+        },
+    ),
+)
+class WishlistContributionIntentView(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "contributions"
+
+    def post(self, request, pk):
+        item = get_wishlist_item(pk)
+        serializer = WishlistContributionWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        amount = serializer.validated_data["amount"]
+        assert_contribution_allowed(item, amount)
+        contribution = serializer.save(
+            item=item,
+            contributor=request.user if request.user.is_authenticated else None,
+        )
+        if request.user.is_authenticated:
+            if not serializer.validated_data.get("contributor_name"):
+                contribution.contributor_name = get_user_display_seed(request.user)
+                contribution.save(update_fields=["contributor_name"])
+        contribution, intent = create_wishlist_contribution_payment_intent(
+            contribution,
+            idempotency_key=request.headers.get("Idempotency-Key"),
+        )
+        return Response(
+            {
+                "contribution": WishlistContributionReadSerializer(contribution).data,
+                "client_secret": intent.get("client_secret"),
+                "detail": "Wishlist contribution payment intent created.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@extend_schema_view(
+    get=extend_schema(responses={200: ReferralProductReadSerializer(many=True)}),
+)
+class ReferralProductListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        category = request.query_params.get("category", "")
+        products = get_active_referral_products(category=category)
+        return Response(ReferralProductReadSerializer(products, many=True).data)
+
+
+class ReferralProductClickView(APIView):
+    """Track a click and redirect to affiliate URL."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from apps.birthdays.models import ReferralProduct
+        from django.shortcuts import get_object_or_404
+        product = get_object_or_404(ReferralProduct, pk=pk, is_active=True)
+        product.click_count += 1
+        product.save(update_fields=["click_count"])
+        return Response({"affiliate_url": product.affiliate_url})

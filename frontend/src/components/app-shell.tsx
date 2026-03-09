@@ -79,13 +79,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="glass-panel panel-tint sticky top-24 hidden h-fit p-4 lg:block">
-          <div className="mb-6 flex items-center gap-3 rounded-[22px] bg-secondary/70 p-4">
+          <Link href="/" className="mb-6 flex items-center gap-3 rounded-[22px] bg-secondary/70 p-4 transition hover:bg-secondary">
             <Avatar name={`${user?.first_name ?? ""} ${user?.last_name ?? ""}`} />
             <div>
               <p className="font-semibold">{user?.first_name || "Host"}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-          </div>
+          </Link>
           <div className="space-y-2">
             {nav.map((item) => {
               const Icon = item.icon;

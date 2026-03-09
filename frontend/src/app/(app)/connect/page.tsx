@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorNotice } from "@/components/ui/error-notice";
 import { ErrorState, LoadingBlock } from "@/components/ui/state-block";
-import { useConnectOnboard, useConnectStatus } from "@/features/connect/api";
+import { useConnectDashboard, useConnectOnboard, useConnectStatus } from "@/features/connect/api";
 import { getErrorMessage } from "@/lib/api/errors";
 
 export default function ConnectPage() {
   const status = useConnectStatus();
   const onboard = useConnectOnboard();
+  const dashboard = useConnectDashboard();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (status.isLoading) {
@@ -45,9 +46,31 @@ export default function ConnectPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <ErrorNotice message={submitError} />
-          <Button onClick={handleOnboard} disabled={onboard.isPending}>
-            {status.data?.has_account ? "Resume onboarding" : "Start onboarding"}
-          </Button>
+          {status.data?.connect_account?.payouts_enabled ? (
+            <div className="flex flex-wrap gap-2">
+              <Button disabled variant="outline" className="cursor-default">
+                Onboarding complete ✓
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={dashboard.isPending}
+                onClick={async () => {
+                  try {
+                    const res = await dashboard.mutateAsync();
+                    window.open(res.url, "_blank", "noopener,noreferrer");
+                  } catch (err) {
+                    setSubmitError(getErrorMessage(err, "Unable to open Stripe dashboard."));
+                  }
+                }}
+              >
+                {dashboard.isPending ? "Opening…" : "Open Stripe Dashboard ↗"}
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={handleOnboard} disabled={onboard.isPending}>
+              {status.data?.has_account ? "Resume onboarding" : "Start onboarding"}
+            </Button>
+          )}
           <p className="text-sm text-muted-foreground">
             Refresh and return pages route back here so the host can see updated account requirements immediately.
           </p>
@@ -76,10 +99,21 @@ export default function ConnectPage() {
               {status.data?.connect_account?.payouts_enabled ? "Enabled" : "Pending"}
             </Badge>
           </div>
-          <div>
-            <p className="mb-2 font-medium">Requirements</p>
-            <pre className="overflow-auto rounded-[20px] bg-secondary/70 p-4 text-xs">{JSON.stringify(status.data?.connect_account?.requirements ?? {}, null, 2)}</pre>
-          </div>
+          {(() => {
+            const req = status.data?.connect_account?.requirements ?? {};
+            const due = req.currently_due ?? [];
+            if (!due.length) return null;
+            return (
+              <div>
+                <p className="mb-2 font-medium">Requirements</p>
+                <ul className="space-y-1 rounded-[20px] bg-secondary/70 p-4 text-xs">
+                  {due.map((item: string) => (
+                    <li key={item} className="text-muted-foreground">{item.replaceAll(".", " › ")}</li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>

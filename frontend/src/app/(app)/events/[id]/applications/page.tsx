@@ -152,12 +152,16 @@ export default function EventApplicationsPage() {
               {event?.approved_count}/{event?.max_guests}
             </p>
           </div>
-          <div className={`rounded-[24px] p-4 ${event?.venue_status === "CONFIRMED" ? "bg-green-50 dark:bg-green-950/30" : "bg-secondary/70"}`}>
+          <div className={`rounded-[24px] p-4 ${event?.venue_status === "CONFIRMED" ? "bg-green-50 dark:bg-green-950/30" : event?.venue_status === "PROPOSED" ? "bg-amber-50 dark:bg-amber-950/30" : "bg-secondary/70"}`}>
             <p className="text-sm text-muted-foreground">Venue</p>
-            <p className={`mt-2 text-2xl font-semibold ${event?.venue_status === "CONFIRMED" ? "text-green-700 dark:text-green-400" : ""}`}>
+            <p className={`mt-2 text-2xl font-semibold ${event?.venue_status === "CONFIRMED" ? "text-green-700 dark:text-green-400" : event?.venue_status === "PROPOSED" ? "text-amber-700 dark:text-amber-400" : ""}`}>
               {event?.venue_status}
             </p>
-            {event?.state === "PUBLISHED" && event?.venue_status !== "CONFIRMED" ? (
+            {event?.venue_status === "PROPOSED" ? (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                {event.venue_name ? `"${event.venue_name}" proposed` : "Venue proposed"} — confirm availability below before locking.
+              </p>
+            ) : event?.venue_status === "NOT_SET" ? (
               <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                 Venue not selected — confirm before the lock deadline.
               </p>
@@ -169,8 +173,10 @@ export default function EventApplicationsPage() {
       <Card className="relative z-10">
         <CardHeader>
           <CardTitle>Venue confirmation</CardTitle>
-          {event?.venue_name ? (
+          {event?.venue_name && event.venue_status === "CONFIRMED" ? (
             <p className="text-sm text-emerald-600 dark:text-emerald-400">Currently confirmed: <span className="font-medium">{event.venue_name}</span></p>
+          ) : event?.venue_name && event.venue_status === "PROPOSED" ? (
+            <p className="text-sm text-amber-600 dark:text-amber-400">Proposed: <span className="font-medium">{event.venue_name}</span> — once availability is agreed, submit to confirm.</p>
           ) : null}
         </CardHeader>
         <CardContent>

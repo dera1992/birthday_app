@@ -28,10 +28,23 @@ export const birthdayProfileDetailsSchema = z.object({
 
 export const wishlistItemSchema = z.object({
   title: z.string().min(2),
-  description: z.string().min(2),
+  description: z.string().optional().default(""),
   external_url: z.string().url().optional().or(z.literal("")),
   price: z.string().optional(),
   currency: z.string().min(3),
+  visibility: z.enum(["PUBLIC", "PRIVATE"]).default("PUBLIC"),
+  source_type: z.enum(["CUSTOM", "REFERRAL_PRODUCT"]).default("CUSTOM"),
+  referral_product_id: z.number().optional().nullable(),
+  allow_contributions: z.boolean().default(false),
+  contribution_public: z.boolean().default(true),
+  target_amount: z.string().optional().nullable(),
+});
+
+export const wishlistContributionSchema = z.object({
+  amount: z.string().min(1),
+  currency: z.string().min(3),
+  contributor_name: z.string().optional(),
+  contributor_email: z.string().email().optional().or(z.literal("")),
 });
 
 export const wishlistReserveSchema = z.object({

@@ -1,8 +1,11 @@
+import datetime
+from decimal import Decimal
+
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.birthdays.models import BirthdayProfile, SupportMessage, WishlistReservation
+from apps.birthdays.models import BirthdayProfile, SupportMessage, WishlistContribution, WishlistItem, WishlistReservation
 from apps.safety.services import assert_not_blocked
 
 
@@ -34,18 +37,8 @@ def get_birthday_profile_missing_fields(user) -> list[str]:
         return ["birthday profile"]
 
     missing_fields: list[str] = []
-    if not profile.bio:
-        missing_fields.append("bio")
-    if not profile.gender:
-        missing_fields.append("gender")
     if not profile.date_of_birth:
         missing_fields.append("date of birth")
-    if not profile.marital_status:
-        missing_fields.append("marital status")
-    if not profile.occupation:
-        missing_fields.append("occupation")
-    if not (profile.preferences or {}).get("interests"):
-        missing_fields.append("interests")
     return missing_fields
 
 
@@ -90,6 +83,38 @@ def reply_to_support_message(message: SupportMessage, actor, reply_text: str):
     message.reply_created_at = timezone.now()
     message.save(update_fields=["reply_text", "reply_created_at"])
     return message
+
+
+def birthday_has_passed_this_year(profile: BirthdayProfile) -> bool:
+    """Return True if the profile's birthday (day/month) has already passed in the current year."""
+    today = datetime.date.today()
+    try:
+        birthday_this_year = datetime.date(today.year, profile.month, profile.day)
+    except ValueError:
+        # Invalid date (e.g., Feb 29 in non-leap year) — treat as not passed
+        return False
+    return today > birthday_this_year
+
+
+def is_wishlist_item_visible_to_public(item: WishlistItem) -> bool:
+    """A PUBLIC item is hidden from public view once the birthday has passed this year."""
+    if item.visibility == WishlistItem.VISIBILITY_PRIVATE:
+        return False
+    return not birthday_has_passed_this_year(item.profile)
+
+
+def assert_contribution_allowed(item: WishlistItem, amount: Decimal):
+    if not item.allow_contributions:
+        raise ValidationError("This wishlist item does not accept contributions.")
+    if item.target_amount is None:
+        raise ValidationError("This wishlist item has no contribution target set.")
+    remaining = item.target_amount - item.amount_raised
+    if remaining <= 0:
+        raise ValidationError("This wishlist item is already fully funded.")
+    if amount > remaining:
+        raise ValidationError(
+            f"Contribution of {amount} exceeds the remaining target of {remaining}."
+        )
 
 
 def cancel_wishlist_reservation(item, actor, message_body: str = ""):

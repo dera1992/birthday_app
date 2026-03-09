@@ -33,6 +33,8 @@ class EventPayment(models.Model):
     attendee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="event_payments")
     application = models.ForeignKey("events.EventApplication", on_delete=models.CASCADE, related_name="payments")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    platform_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    celebrant_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     currency = models.CharField(max_length=8, default="GBP")
     transfer_group = models.CharField(max_length=255, blank=True)
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True)

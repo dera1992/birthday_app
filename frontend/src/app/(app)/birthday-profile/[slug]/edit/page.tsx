@@ -18,6 +18,8 @@ import { ErrorState, LoadingBlock } from "@/components/ui/state-block";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
 import { useBirthdayProfile, useUpdateBirthdayProfile, useUploadProfileImage } from "@/features/birthday/api";
+import { MultiSelectDropdown } from "@/features/birthday/profile-form-dropdown";
+import { INTEREST_OPTIONS, OCCUPATION_OPTIONS } from "@/features/birthday/profile-form-options";
 import { getErrorMessage } from "@/lib/api/errors";
 import { birthdayProfileDetailsSchema } from "@/lib/validators/birthday";
 
@@ -36,6 +38,7 @@ export default function EditBirthdayProfilePage() {
   const uploadImage = useUploadProfileImage(slug);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const form = useForm<BirthdayProfileEditorValues>({
     resolver: zodResolver(
       birthdayProfileDetailsSchema.extend({
@@ -62,11 +65,13 @@ export default function EditBirthdayProfilePage() {
 
   useEffect(() => {
     if (!profile) return;
+    const interests = Array.isArray(profile.preferences?.interests) ? profile.preferences.interests : [];
+    setSelectedInterests(interests);
     form.reset({
       hide_year: profile.hide_year,
       visibility: profile.visibility as "PRIVATE" | "LINK_ONLY" | "PUBLIC",
       bio: profile.bio ?? "",
-      interests: Array.isArray(profile.preferences?.interests) ? profile.preferences.interests.join(", ") : "",
+      interests: interests.join(", "),
       gender: profile.gender ?? "",
       date_of_birth: profile.date_of_birth ?? "",
       marital_status: profile.marital_status ?? "",
@@ -77,6 +82,10 @@ export default function EditBirthdayProfilePage() {
       x: profile.social_links?.x ?? "",
     });
   }, [form, profile]);
+
+  useEffect(() => {
+    form.setValue("interests", selectedInterests.join(", "));
+  }, [form, selectedInterests]);
 
   useEffect(() => {
     if (profile && user?.id && profile.user !== user.id) {
@@ -232,7 +241,13 @@ export default function EditBirthdayProfilePage() {
 
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="interests">Interests <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input id="interests" placeholder="brunch, travel, live music" {...form.register("interests")} />
+              <input type="hidden" {...form.register("interests")} />
+              <MultiSelectDropdown
+                options={INTEREST_OPTIONS}
+                selected={selectedInterests}
+                onChange={setSelectedInterests}
+                placeholder="Select interests"
+              />
             </div>
 
             <div className="space-y-2">
@@ -267,7 +282,18 @@ export default function EditBirthdayProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="occupation">Occupation <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input id="occupation" {...form.register("occupation")} />
+              <select
+                id="occupation"
+                className="flex h-11 w-full rounded-2xl border border-input bg-background/80 px-4 text-sm"
+                {...form.register("occupation")}
+              >
+                <option value="">Not set</option>
+                {OCCUPATION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="lg:col-span-2">

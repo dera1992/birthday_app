@@ -14,7 +14,6 @@ from apps.payments.services import (
 )
 from apps.payments.webhooks import parse_stripe_event, process_stripe_event
 
-
 from django.conf import settings
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -96,3 +95,66 @@ class StripeWebhookView(APIView):
         event = parse_stripe_event(request.body, request.headers.get("Stripe-Signature"))
         processed = process_stripe_event(event)
         return Response({"detail": "Processed." if processed else "Already processed."})
+
+
+class PaymentHistoryView(APIView):
+    """GET /api/payments/history — returns all payments made by the authenticated user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.gifts.models import GiftPurchase
+        from apps.birthdays.models import WishlistContribution
+        from apps.payments.models import EventPayment
+
+        user = request.user
+        entries = []
+
+        for p in GiftPurchase.objects.select_related("product", "celebrant").filter(
+            buyer_user=user, status=GiftPurchase.Status.SUCCEEDED
+        ):
+            celebrant_name = f"{p.celebrant.first_name} {p.celebrant.last_name}".strip() or p.celebrant.email
+            entries.append({
+                "id": f"gift-{p.id}",
+                "type": "GIFT",
+                "description": f"Digital Gift — {p.product.name}",
+                "to": celebrant_name,
+                "amount": str(p.gross_amount),
+                "currency": p.product.currency.upper(),
+                "reference": p.stripe_payment_intent_id,
+                "created_at": p.created_at.isoformat(),
+            })
+
+        for c in WishlistContribution.objects.select_related("item", "item__profile", "item__profile__user").filter(
+            contributor=user, status=WishlistContribution.STATUS_SUCCEEDED
+        ):
+            owner = c.item.profile.user
+            celebrant_name = f"{owner.first_name} {owner.last_name}".strip() or owner.email
+            entries.append({
+                "id": f"contribution-{c.id}",
+                "type": "CONTRIBUTION",
+                "description": f"Wishlist Contribution — {c.item.title}",
+                "to": celebrant_name,
+                "amount": str(c.amount),
+                "currency": c.currency.upper(),
+                "reference": c.stripe_payment_intent_id,
+                "created_at": c.created_at.isoformat(),
+            })
+
+        for ep in EventPayment.objects.select_related("event").filter(
+            attendee=user, status=EventPayment.STATUS_HELD_ESCROW
+        ) | EventPayment.objects.select_related("event").filter(
+            attendee=user, status=EventPayment.STATUS_RELEASED
+        ):
+            entries.append({
+                "id": f"event-{ep.id}",
+                "type": "EVENT_REGISTRATION",
+                "description": f"Event Registration — {ep.event.title}",
+                "to": ep.event.title,
+                "amount": str(ep.amount),
+                "currency": ep.currency.upper(),
+                "reference": ep.stripe_payment_intent_id,
+                "created_at": ep.created_at.isoformat(),
+            })
+
+        entries.sort(key=lambda x: x["created_at"], reverse=True)
+        return Response(entries)

@@ -9,11 +9,17 @@ from apps.payments.services import (
     sync_payment_intent_failed,
     sync_payment_intent_succeeded,
     sync_support_contribution_status,
+    sync_wishlist_contribution_status,
 )
-from apps.birthdays.models import SupportContribution
+from apps.birthdays.models import SupportContribution, WishlistContribution
 from apps.gifts.models import GiftPurchase
 from apps.gifts.services import mark_gift_purchase_succeeded, mark_gift_purchase_failed
-from apps.wallet.services import credit_gift_earned
+from apps.wallet.services import credit_gift_earned, credit_contribution_earned, credit_event_payment_earned
+from apps.payments.emails import (
+    send_gift_purchase_invoice,
+    send_wishlist_contribution_invoice,
+    send_event_registration_invoice,
+)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -39,14 +45,34 @@ def handle_payment_intent_succeeded(data_object: dict):
         )
         mark_gift_purchase_succeeded(purchase, charge_id=data_object.get("latest_charge", ""))
         credit_gift_earned(purchase)
+        send_gift_purchase_invoice(purchase)
         # Enqueue AI generation if this is an AI gift product
         if purchase.product.is_ai_generated_product:
             from apps.gifts.tasks import generate_ai_gift_options_task
             generate_ai_gift_options_task.delay(purchase.id)
         return
 
-    payment = EventPayment.objects.get(stripe_payment_intent_id=data_object["id"])
+    if metadata_type == "wishlist_contribution":
+        from django.db import transaction
+        from decimal import Decimal
+        contribution = WishlistContribution.objects.select_related("item", "item__profile", "item__profile__user").get(
+            stripe_payment_intent_id=data_object["id"]
+        )
+        with transaction.atomic():
+            sync_wishlist_contribution_status(contribution, WishlistContribution.STATUS_SUCCEEDED)
+            item = contribution.item
+            item.amount_raised = (item.amount_raised or Decimal("0")) + contribution.amount
+            item.save(update_fields=["amount_raised"])
+            credit_contribution_earned(contribution)
+        send_wishlist_contribution_invoice(contribution)
+        return
+
+    payment = EventPayment.objects.select_related("event", "event__host", "event__payee_user").get(
+        stripe_payment_intent_id=data_object["id"]
+    )
     sync_payment_intent_succeeded(payment, data_object)
+    credit_event_payment_earned(payment)
+    send_event_registration_invoice(payment)
 
 
 def handle_payment_intent_failed(data_object: dict):
@@ -66,6 +92,15 @@ def handle_payment_intent_failed(data_object: dict):
         mark_gift_purchase_failed(purchase)
         return
 
+    if metadata_type == "wishlist_contribution":
+        contribution = WishlistContribution.objects.get(stripe_payment_intent_id=data_object["id"])
+        sync_wishlist_contribution_status(
+            contribution,
+            WishlistContribution.STATUS_FAILED,
+            data_object.get("last_payment_error", {}).get("message", ""),
+        )
+        return
+
     payment = EventPayment.objects.get(stripe_payment_intent_id=data_object["id"])
     sync_payment_intent_failed(payment, data_object, EventPayment.STATUS_FAILED)
 
@@ -81,6 +116,11 @@ def handle_payment_intent_canceled(data_object: dict):
     if metadata_type == "gift_purchase":
         purchase = GiftPurchase.objects.get(stripe_payment_intent_id=data_object["id"])
         mark_gift_purchase_failed(purchase)
+        return
+
+    if metadata_type == "wishlist_contribution":
+        contribution = WishlistContribution.objects.get(stripe_payment_intent_id=data_object["id"])
+        sync_wishlist_contribution_status(contribution, WishlistContribution.STATUS_CANCELLED)
         return
 
     payment = EventPayment.objects.get(stripe_payment_intent_id=data_object["id"])

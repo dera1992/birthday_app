@@ -11,13 +11,61 @@
         },
         "preview_defaults": {
           "recipient_name": "Happy Birthday Emma",
-          "message": "Wishing you joy and laughter",
+          "message": "Wishing you joy and laughter on your special day!",
           "sender_name": "From Alex"
         },
         "layout_config": {
-          "title": { "x": "50%", "y": "24%", "align": "center", "fontSize": 34, "fontWeight": 800, "color": "#ffffff" },
+          "title": { "x": "50%", "y": "22%", "align": "center", "fontSize": 34, "fontWeight": 800, "color": "#ffffff" },
           "message": { "x": "50%", "y": "54%", "align": "center", "fontSize": 18, "fontWeight": 500, "color": "#0f172a", "maxWidth": "70%" },
-          "sender": { "x": "50%", "y": "79%", "align": "center", "fontSize": 16, "fontWeight": 700, "color": "#0f172a" }
+          "sender": { "x": "50%", "y": "80%", "align": "center", "fontSize": 16, "fontWeight": 700, "color": "#0f172a" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "golden-milestone-card-template",
+      "name": "Golden Milestone Card Template",
+      "renderer_type": "CARD_TEMPLATE",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_card",
+          "aspect_ratio": "square"
+        },
+        "preview_defaults": {
+          "recipient_name": "Sarah",
+          "milestone_age": "30",
+          "message": "Thirty years of brilliance — here's to many more.",
+          "sender_name": "From James"
+        },
+        "layout_config": {
+          "title": { "x": "50%", "y": "18%", "align": "center", "fontSize": 28, "fontWeight": 700, "color": "#d4af37" },
+          "subtitle": { "x": "50%", "y": "34%", "align": "center", "fontSize": 56, "fontWeight": 900, "color": "#d4af37" },
+          "message": { "x": "50%", "y": "62%", "align": "center", "fontSize": 17, "fontWeight": 400, "color": "#fdf6e3", "maxWidth": "72%" },
+          "sender": { "x": "50%", "y": "82%", "align": "center", "fontSize": 15, "fontWeight": 600, "color": "#c9b880" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "neon-party-card-template",
+      "name": "Neon Party Card Template",
+      "renderer_type": "CARD_TEMPLATE",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_card",
+          "aspect_ratio": "square"
+        },
+        "preview_defaults": {
+          "recipient_name": "LET'S GOOO",
+          "message": "It's your birthday and the night is young.",
+          "sender_name": "Your crew"
+        },
+        "layout_config": {
+          "title": { "x": "50%", "y": "20%", "align": "center", "fontSize": 38, "fontWeight": 900, "color": "#39ff14" },
+          "message": { "x": "50%", "y": "55%", "align": "center", "fontSize": 17, "fontWeight": 500, "color": "#ffffff", "maxWidth": "68%" },
+          "sender": { "x": "85%", "y": "83%", "align": "right", "fontSize": 14, "fontWeight": 600, "color": "#ff2d78" }
         }
       },
       "publication_status": "PUBLISHED",
@@ -45,6 +93,50 @@
       "is_active": true
     },
     {
+      "slug": "wildflower-garden-template",
+      "name": "Wildflower Garden Template",
+      "renderer_type": "FLOWER_GIFT",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "portrait"
+        },
+        "preview_defaults": {
+          "dedication": "Happy Birthday, free spirit!",
+          "message": "May your day bloom as wildly as you do.",
+          "sender_name": "With love"
+        },
+        "layout_config": {
+          "dedication": { "x": "50%", "y": "14%", "align": "center", "fontSize": 15, "fontWeight": 600, "color": "#3d2b1f" },
+          "message": { "x": "50%", "y": "80%", "align": "center", "fontSize": 15, "fontWeight": 400, "color": "#3d2b1f", "maxWidth": "70%" },
+          "sender": { "x": "50%", "y": "90%", "align": "center", "fontSize": 13, "fontWeight": 700, "color": "#5c3d2e" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "sunflower-beam-template",
+      "name": "Sunflower Beam Template",
+      "renderer_type": "FLOWER_GIFT",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "portrait"
+        },
+        "preview_defaults": {
+          "message": "You are the sunshine of this day.",
+          "sender_name": "Always yours"
+        },
+        "layout_config": {
+          "message": { "x": "50%", "y": "77%", "align": "center", "fontSize": 18, "fontWeight": 600, "color": "#1a1a1a", "maxWidth": "72%" },
+          "sender": { "x": "50%", "y": "89%", "align": "center", "fontSize": 14, "fontWeight": 700, "color": "#7a4f00" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
       "slug": "celebration-note-template",
       "name": "Celebration Note Template",
       "renderer_type": "ANIMATED_MESSAGE",
@@ -54,12 +146,58 @@
           "aspect_ratio": "square"
         },
         "preview_defaults": {
-          "message": "Wishing you joy and laughter",
+          "message": "Wishing you joy, laughter and cake!",
           "sender_name": "From Alex"
         },
         "layout_config": {
           "message": { "x": "50%", "y": "56%", "align": "center", "fontSize": 20, "fontWeight": 600, "color": "#ffffff", "maxWidth": "70%" },
           "sender": { "x": "50%", "y": "82%", "align": "center", "fontSize": 14, "fontWeight": 500, "color": "#ffffff" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "heartfelt-letter-template",
+      "name": "Heartfelt Letter Template",
+      "renderer_type": "ANIMATED_MESSAGE",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "square"
+        },
+        "preview_defaults": {
+          "recipient_name": "Dearest Amara",
+          "message": "There aren't enough words to describe how special you are to me. Today is yours — every wonderful second of it.",
+          "sender_name": "Forever yours, Jordan"
+        },
+        "layout_config": {
+          "title": { "x": "15%", "y": "12%", "align": "left", "fontSize": 18, "fontWeight": 600, "color": "#5c3d2e" },
+          "message": { "x": "50%", "y": "52%", "align": "center", "fontSize": 16, "fontWeight": 400, "color": "#2c1a0e", "maxWidth": "76%" },
+          "sender": { "x": "82%", "y": "84%", "align": "right", "fontSize": 14, "fontWeight": 600, "color": "#5c3d2e" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "starlight-wish-template",
+      "name": "Starlight Wish Template",
+      "renderer_type": "ANIMATED_MESSAGE",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "square"
+        },
+        "preview_defaults": {
+          "recipient_name": "Maya",
+          "wish_text": "Close your eyes, make a wish — it's already on its way to you.",
+          "sender_name": "From the stars, Kai"
+        },
+        "layout_config": {
+          "title": { "x": "50%", "y": "24%", "align": "center", "fontSize": 22, "fontWeight": 700, "color": "#e8d5ff" },
+          "message": { "x": "50%", "y": "56%", "align": "center", "fontSize": 17, "fontWeight": 400, "color": "#f0e6ff", "maxWidth": "72%" },
+          "sender": { "x": "50%", "y": "83%", "align": "center", "fontSize": 13, "fontWeight": 500, "color": "#c4a8f0" }
         }
       },
       "publication_status": "PUBLISHED",
@@ -87,6 +225,50 @@
       "is_active": true
     },
     {
+      "slug": "birthday-king-badge-template",
+      "name": "Birthday King Badge Template",
+      "renderer_type": "BADGE_GIFT",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "square"
+        },
+        "preview_defaults": {
+          "recipient_name": "Birthday King",
+          "message": "Ruler of this fine day"
+        },
+        "layout_config": {
+          "title": { "x": "50%", "y": "36%", "align": "center", "fontSize": 20, "fontWeight": 800, "color": "#d4af37" },
+          "message": { "x": "50%", "y": "70%", "align": "center", "fontSize": 14, "fontWeight": 500, "color": "#f5e8c8", "maxWidth": "70%" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "legend-of-the-day-badge-template",
+      "name": "Legend of the Day Badge Template",
+      "renderer_type": "BADGE_GIFT",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "square"
+        },
+        "preview_defaults": {
+          "recipient_name": "Alex",
+          "legend_title": "CERTIFIED LEGEND",
+          "achievement_text": "For being absolutely unforgettable"
+        },
+        "layout_config": {
+          "title": { "x": "50%", "y": "32%", "align": "center", "fontSize": 14, "fontWeight": 700, "color": "#a78bfa" },
+          "subtitle": { "x": "50%", "y": "48%", "align": "center", "fontSize": 22, "fontWeight": 900, "color": "#ffffff" },
+          "message": { "x": "50%", "y": "70%", "align": "center", "fontSize": 13, "fontWeight": 400, "color": "#e2d9f3", "maxWidth": "72%" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
       "slug": "birthday-highlight-video-template",
       "name": "Birthday Highlight Video Template",
       "renderer_type": "VIDEO_TEMPLATE",
@@ -97,12 +279,37 @@
         },
         "preview_defaults": {
           "recipient_name": "Birthday Highlight",
-          "message": "A premium birthday surprise.",
+          "message": "A premium birthday surprise just for you.",
           "sender_name": "Alex"
         },
         "layout_config": {
           "title": { "x": "50%", "y": "28%", "align": "center", "fontSize": 24, "fontWeight": 700, "color": "#ffffff" },
           "message": { "x": "50%", "y": "76%", "align": "center", "fontSize": 15, "fontWeight": 500, "color": "#ffffff", "maxWidth": "76%" }
+        }
+      },
+      "publication_status": "PUBLISHED",
+      "is_active": true
+    },
+    {
+      "slug": "cinematic-tribute-template",
+      "name": "Cinematic Tribute Template",
+      "renderer_type": "VIDEO_TEMPLATE",
+      "default_config": {
+        "presentation": {
+          "preview_shell": "studio_panel",
+          "aspect_ratio": "landscape"
+        },
+        "preview_defaults": {
+          "recipient_name": "Olivia",
+          "tribute_headline": "A Story Worth Celebrating",
+          "personal_note": "Every great story needs a protagonist. Yours is a masterpiece.",
+          "director_credit": "Directed with love by Marcus"
+        },
+        "layout_config": {
+          "title": { "x": "50%", "y": "22%", "align": "center", "fontSize": 13, "fontWeight": 400, "color": "#c4b89a" },
+          "subtitle": { "x": "50%", "y": "38%", "align": "center", "fontSize": 26, "fontWeight": 700, "color": "#f5f0e8" },
+          "message": { "x": "50%", "y": "68%", "align": "center", "fontSize": 15, "fontWeight": 300, "color": "#e8e2d6", "maxWidth": "74%" },
+          "sender": { "x": "50%", "y": "86%", "align": "center", "fontSize": 12, "fontWeight": 500, "color": "#9a8e78" }
         }
       },
       "publication_status": "PUBLISHED",
@@ -116,7 +323,7 @@
       "category": "CARD",
       "renderer_type": "CARD_TEMPLATE",
       "template_slug": "confetti-birthday-card-template",
-      "description": "A premium birthday card with confetti, layered gradients, and a personal note.",
+      "description": "A vibrant birthday card bursting with confetti, layered gradients, and a fully personalised message. Perfect for any age.",
       "price": "3.99",
       "currency": "gbp",
       "platform_fee_bps": 3000,
@@ -127,24 +334,221 @@
       },
       "customization_schema": {
         "fields": [
-          { "name": "recipient_name", "type": "text", "label": "Recipient Name", "required": true, "max_length": 80 },
-          { "name": "message", "type": "textarea", "label": "Birthday Message", "required": true, "max_length": 300 },
-          { "name": "sender_name", "type": "text", "label": "From", "required": false, "max_length": 80 },
-          { "name": "theme_color", "type": "select", "label": "Theme Color", "required": false, "options": ["pink", "gold", "blue"] },
-          { "name": "show_confetti", "type": "toggle", "label": "Show Confetti", "required": false }
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Who is this for?",
+            "placeholder": "e.g. Happy Birthday Emma",
+            "required": true,
+            "max_length": 80
+          },
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Your birthday message",
+            "placeholder": "Write something heartfelt…",
+            "required": true,
+            "max_length": 300
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. From Alex & the gang",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "card_style",
+            "type": "select",
+            "label": "Card style",
+            "required": false,
+            "options": ["confetti", "balloons", "stars", "bokeh", "geometric"]
+          },
+          {
+            "name": "theme_color",
+            "type": "select",
+            "label": "Colour theme",
+            "required": false,
+            "options": ["pink", "gold", "blue", "purple", "mint", "coral"]
+          },
+          {
+            "name": "font_style",
+            "type": "select",
+            "label": "Font style",
+            "required": false,
+            "options": ["bold", "elegant", "playful", "modern"]
+          },
+          {
+            "name": "show_confetti",
+            "type": "toggle",
+            "label": "Animated confetti burst",
+            "required": false
+          }
         ]
       },
-      "purchase_instructions": "Personalise it with a recipient name, a warm note, and optional confetti.",
+      "purchase_instructions": "Add a recipient name, pick a card style and colour theme, then write your message. The card is delivered instantly to the birthday page.",
+      "allow_anonymous_sender": true,
+      "is_active": true
+    },
+    {
+      "slug": "golden-milestone-card",
+      "name": "Golden Milestone Card",
+      "category": "CARD",
+      "renderer_type": "CARD_TEMPLATE",
+      "template_slug": "golden-milestone-card-template",
+      "description": "An elegant, gold-foil card designed for milestone birthdays — 18th, 21st, 30th, 40th, 50th and beyond. Understated luxury in every detail.",
+      "price": "5.99",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "title": { "x": "50%", "y": "18%", "align": "center", "fontSize": 26, "fontWeight": 700, "color": "#d4af37" },
+        "subtitle": { "x": "50%", "y": "35%", "align": "center", "fontSize": 52, "fontWeight": 900, "color": "#d4af37" },
+        "message": { "x": "50%", "y": "62%", "align": "center", "fontSize": 17, "fontWeight": 400, "color": "#fdf6e3", "maxWidth": "72%" },
+        "sender": { "x": "50%", "y": "82%", "align": "center", "fontSize": 14, "fontWeight": 600, "color": "#c9b880" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Celebrant's name",
+            "placeholder": "e.g. Sarah",
+            "required": true,
+            "max_length": 80
+          },
+          {
+            "name": "milestone_age",
+            "type": "number",
+            "label": "Milestone age",
+            "placeholder": "e.g. 30",
+            "required": false,
+            "min": 1,
+            "max": 120
+          },
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Your message",
+            "placeholder": "Something meaningful for a milestone moment…",
+            "required": true,
+            "max_length": 280
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. With love, James",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "metal_tone",
+            "type": "select",
+            "label": "Metal tone",
+            "required": false,
+            "options": ["gold", "rose-gold", "platinum", "bronze", "champagne"]
+          },
+          {
+            "name": "engraving_style",
+            "type": "select",
+            "label": "Engraving style",
+            "required": false,
+            "options": ["classic", "art-deco", "minimal", "roman-numeral", "calligraphy"]
+          },
+          {
+            "name": "font_style",
+            "type": "select",
+            "label": "Typography",
+            "required": false,
+            "options": ["serif", "script", "modern-sans", "slab"]
+          }
+        ]
+      },
+      "purchase_instructions": "Enter the celebrant's name and milestone age. Choose a metal tone and engraving style. Your card is delivered instantly to their birthday page.",
+      "allow_anonymous_sender": false,
+      "is_active": true
+    },
+    {
+      "slug": "neon-party-card",
+      "name": "Neon Party Card",
+      "category": "CARD",
+      "renderer_type": "CARD_TEMPLATE",
+      "template_slug": "neon-party-card-template",
+      "description": "A dark, high-energy card with glowing neon text and a rave-inspired aesthetic. For the birthday where the night doesn't end.",
+      "price": "4.49",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "title": { "x": "50%", "y": "20%", "align": "center", "fontSize": 36, "fontWeight": 900, "color": "#39ff14" },
+        "message": { "x": "50%", "y": "55%", "align": "center", "fontSize": 17, "fontWeight": 500, "color": "#ffffff", "maxWidth": "68%" },
+        "sender": { "x": "85%", "y": "84%", "align": "right", "fontSize": 14, "fontWeight": 600, "color": "#ff2d78" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Shout-out name",
+            "placeholder": "e.g. LET'S GOOO or Happy Birthday Jake",
+            "required": true,
+            "max_length": 80
+          },
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Party message",
+            "placeholder": "Keep it punchy…",
+            "required": true,
+            "max_length": 220
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. Your whole crew",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "neon_color",
+            "type": "select",
+            "label": "Neon accent colour",
+            "required": false,
+            "options": ["electric-green", "hot-pink", "electric-blue", "cyber-yellow", "laser-purple", "orange-blaze"]
+          },
+          {
+            "name": "party_vibe",
+            "type": "select",
+            "label": "Party vibe",
+            "required": false,
+            "options": ["rave", "house", "hip-hop", "pop-anthems", "garage", "generic"]
+          },
+          {
+            "name": "show_pulse",
+            "type": "toggle",
+            "label": "Pulse glow animation",
+            "required": false
+          },
+          {
+            "name": "dark_mode",
+            "type": "toggle",
+            "label": "Full dark background",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Write a bold shout-out, pick your neon colour and vibe. Lands instantly on their birthday page. Max energy only.",
       "allow_anonymous_sender": true,
       "is_active": true
     },
     {
       "slug": "rose-bouquet",
-      "name": "Rose Bouquet",
+      "name": "Classic Rose Bouquet",
       "category": "FLOWER",
       "renderer_type": "FLOWER_GIFT",
       "template_slug": "rose-bouquet-template",
-      "description": "A lush bouquet gift with a dedication placed near the ribbon.",
+      "description": "A lush, hand-tied rose bouquet delivered digitally — choose your rose colour, ribbon, and add a personal card note.",
       "price": "8.99",
       "currency": "gbp",
       "platform_fee_bps": 3000,
@@ -154,12 +558,186 @@
       },
       "customization_schema": {
         "fields": [
-          { "name": "message", "type": "textarea", "label": "Card Note", "required": false, "max_length": 180 },
-          { "name": "sender_name", "type": "text", "label": "From", "required": false, "max_length": 80 },
-          { "name": "theme_color", "type": "select", "label": "Bouquet Color", "required": false, "options": ["rose", "lavender", "sunset"] }
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Card note",
+            "placeholder": "A short note to attach to the bouquet…",
+            "required": false,
+            "max_length": 200
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. With love, Jamie",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "rose_color",
+            "type": "select",
+            "label": "Rose colour",
+            "required": false,
+            "options": ["classic-red", "blush-pink", "ivory-white", "peach-apricot", "lemon-yellow", "mixed-romance"]
+          },
+          {
+            "name": "bouquet_style",
+            "type": "select",
+            "label": "Bouquet arrangement",
+            "required": false,
+            "options": ["classic-round", "cascading", "wild-romantic", "minimal-stems", "garden-posy"]
+          },
+          {
+            "name": "ribbon_color",
+            "type": "select",
+            "label": "Ribbon colour",
+            "required": false,
+            "options": ["ivory", "gold-satin", "blush-pink", "deep-red", "sage-green", "navy-velvet"]
+          },
+          {
+            "name": "add_greenery",
+            "type": "toggle",
+            "label": "Add eucalyptus greenery",
+            "required": false
+          }
         ]
       },
-      "purchase_instructions": "Short and sweet messages work best for bouquet gifts.",
+      "purchase_instructions": "Choose your rose colour and arrangement style, add a card note, and it appears on the birthday page in seconds.",
+      "allow_anonymous_sender": true,
+      "is_active": true
+    },
+    {
+      "slug": "wildflower-garden",
+      "name": "Wildflower Garden",
+      "category": "FLOWER",
+      "renderer_type": "FLOWER_GIFT",
+      "template_slug": "wildflower-garden-template",
+      "description": "A beautifully chaotic wildflower bouquet with earthy tones and botanical charm. For the birthday soul who blooms differently.",
+      "price": "7.49",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "dedication": { "x": "50%", "y": "14%", "align": "center", "fontSize": 15, "fontWeight": 600, "color": "#3d2b1f" },
+        "message": { "x": "50%", "y": "80%", "align": "center", "fontSize": 15, "fontWeight": 400, "color": "#3d2b1f", "maxWidth": "70%" },
+        "sender": { "x": "50%", "y": "90%", "align": "center", "fontSize": 13, "fontWeight": 700, "color": "#5c3d2e" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "dedication",
+            "type": "text",
+            "label": "Dedication (shown at top)",
+            "placeholder": "e.g. For my favourite wild soul",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Personal note",
+            "placeholder": "Something earthy and real…",
+            "required": false,
+            "max_length": 200
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. With love",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "palette",
+            "type": "select",
+            "label": "Colour palette",
+            "required": false,
+            "options": ["spring-meadow", "summer-burst", "golden-autumn", "coastal-blues", "dried-botanical", "vibrant-tropical"]
+          },
+          {
+            "name": "flower_count",
+            "type": "number",
+            "label": "Number of stems",
+            "required": false,
+            "min": 3,
+            "max": 18
+          },
+          {
+            "name": "include_herbs",
+            "type": "toggle",
+            "label": "Add wild herbs and foliage",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Pick a palette and stem count, add a dedication and personal note. The wildflower arrangement is displayed on the birthday page instantly.",
+      "allow_anonymous_sender": true,
+      "is_active": true
+    },
+    {
+      "slug": "sunflower-beam",
+      "name": "Sunflower Beam",
+      "category": "FLOWER",
+      "renderer_type": "FLOWER_GIFT",
+      "template_slug": "sunflower-beam-template",
+      "description": "Bright, joyful sunflowers radiating warmth and positivity. A bold gift for someone who lights up every room they walk into.",
+      "price": "9.99",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "message": { "x": "50%", "y": "77%", "align": "center", "fontSize": 18, "fontWeight": 600, "color": "#1a1a1a", "maxWidth": "72%" },
+        "sender": { "x": "50%", "y": "89%", "align": "center", "fontSize": 14, "fontWeight": 700, "color": "#7a4f00" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Your sunshine message",
+            "placeholder": "Something warm and bright…",
+            "required": false,
+            "max_length": 200
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. Always yours",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "accent_color",
+            "type": "select",
+            "label": "Accent colour",
+            "required": false,
+            "options": ["golden-yellow", "burnt-orange", "terracotta", "sky-blue", "warm-white", "soft-coral"]
+          },
+          {
+            "name": "sunflower_count",
+            "type": "number",
+            "label": "Number of sunflowers",
+            "required": false,
+            "min": 1,
+            "max": 12
+          },
+          {
+            "name": "vase_style",
+            "type": "select",
+            "label": "Display style",
+            "required": false,
+            "options": ["hand-tied", "mason-jar", "ceramic-vase", "kraft-wrap", "open-field"]
+          },
+          {
+            "name": "show_bees",
+            "type": "toggle",
+            "label": "Add little bees detail",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Write a sunny message, choose your display style and accent colour. The sunflower gift lights up their birthday page instantly.",
       "allow_anonymous_sender": true,
       "is_active": true
     },
@@ -169,7 +747,7 @@
       "category": "MESSAGE",
       "renderer_type": "ANIMATED_MESSAGE",
       "template_slug": "celebration-note-template",
-      "description": "A moving note card with a spotlighted message and sender sign-off.",
+      "description": "A spotlit animated message card for quick, joyful celebrations. Clean, modern, and impossible to miss.",
       "price": "4.49",
       "currency": "gbp",
       "platform_fee_bps": 3000,
@@ -179,12 +757,191 @@
       },
       "customization_schema": {
         "fields": [
-          { "name": "message", "type": "textarea", "label": "Message", "required": true, "max_length": 320 },
-          { "name": "sender_name", "type": "text", "label": "From", "required": false, "max_length": 80 },
-          { "name": "theme_color", "type": "color", "label": "Glow Color", "required": false }
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Your celebration message",
+            "placeholder": "Short and punchy works best here…",
+            "required": true,
+            "max_length": 320
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. From Alex",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "animation_style",
+            "type": "select",
+            "label": "Animation",
+            "required": false,
+            "options": ["spotlight-fade", "sparkle-in", "typewriter", "confetti-burst", "neon-pulse", "firework"]
+          },
+          {
+            "name": "background_style",
+            "type": "select",
+            "label": "Background style",
+            "required": false,
+            "options": ["dark-gradient", "party-pop", "midnight", "pastel-glow", "aurora"]
+          },
+          {
+            "name": "glow_color",
+            "type": "color",
+            "label": "Glow accent colour",
+            "required": false
+          }
         ]
       },
-      "purchase_instructions": "Best for heartfelt notes and quick celebrations.",
+      "purchase_instructions": "Write your message, pick an animation, and choose a background. Best for short, punchy celebrations.",
+      "allow_anonymous_sender": true,
+      "is_active": true
+    },
+    {
+      "slug": "heartfelt-letter",
+      "name": "Heartfelt Letter",
+      "category": "MESSAGE",
+      "renderer_type": "ANIMATED_MESSAGE",
+      "template_slug": "heartfelt-letter-template",
+      "description": "A beautifully animated letter card with a parchment aesthetic and a personal sign-off. For when you really mean every word.",
+      "price": "5.49",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "title": { "x": "15%", "y": "12%", "align": "left", "fontSize": 17, "fontWeight": 600, "color": "#5c3d2e" },
+        "message": { "x": "50%", "y": "52%", "align": "center", "fontSize": 16, "fontWeight": 400, "color": "#2c1a0e", "maxWidth": "76%" },
+        "sender": { "x": "82%", "y": "84%", "align": "right", "fontSize": 14, "fontWeight": 600, "color": "#5c3d2e" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Opening salutation",
+            "placeholder": "e.g. Dearest Amara",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Your letter",
+            "placeholder": "Take your time — every word counts here…",
+            "required": true,
+            "max_length": 600
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. Forever yours, Jordan",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "paper_style",
+            "type": "select",
+            "label": "Paper style",
+            "required": false,
+            "options": ["cream-linen", "aged-parchment", "watercolour-wash", "minimal-white", "romantic-blush", "midnight-velvet"]
+          },
+          {
+            "name": "ink_color",
+            "type": "select",
+            "label": "Ink colour",
+            "required": false,
+            "options": ["midnight-blue", "forest-green", "burgundy", "charcoal", "deep-rose", "warm-black"]
+          },
+          {
+            "name": "show_wax_seal",
+            "type": "toggle",
+            "label": "Add wax seal detail",
+            "required": false
+          },
+          {
+            "name": "show_envelope",
+            "type": "toggle",
+            "label": "Envelope opening animation",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Write a genuine letter, choose paper and ink styles, and add a wax seal for extra charm. Perfect for someone who deserves more than a caption.",
+      "allow_anonymous_sender": false,
+      "is_active": true
+    },
+    {
+      "slug": "starlight-wish",
+      "name": "Starlight Wish",
+      "category": "MESSAGE",
+      "renderer_type": "ANIMATED_MESSAGE",
+      "template_slug": "starlight-wish-template",
+      "description": "An ethereal, starfield message card with shimmering animations. Send a wish written in the stars — magical and unforgettable.",
+      "price": "6.49",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "title": { "x": "50%", "y": "24%", "align": "center", "fontSize": 20, "fontWeight": 700, "color": "#e8d5ff" },
+        "message": { "x": "50%", "y": "56%", "align": "center", "fontSize": 17, "fontWeight": 400, "color": "#f0e6ff", "maxWidth": "72%" },
+        "sender": { "x": "50%", "y": "83%", "align": "center", "fontSize": 13, "fontWeight": 500, "color": "#c4a8f0" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "To (shown in stars)",
+            "placeholder": "e.g. Maya",
+            "required": false,
+            "max_length": 60
+          },
+          {
+            "name": "wish_text",
+            "type": "textarea",
+            "label": "Your wish",
+            "placeholder": "Make it poetic, make it count…",
+            "required": true,
+            "max_length": 360
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Signed from",
+            "placeholder": "e.g. From the stars, Kai",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "star_density",
+            "type": "select",
+            "label": "Star density",
+            "required": false,
+            "options": ["sparse-dusk", "moderate-night", "dense-galaxy", "supernova", "aurora-borealis"]
+          },
+          {
+            "name": "constellation",
+            "type": "select",
+            "label": "Constellation overlay",
+            "required": false,
+            "options": ["none", "orion", "cassiopeia", "ursa-major", "leo", "pisces", "scorpius"]
+          },
+          {
+            "name": "accent_color",
+            "type": "color",
+            "label": "Star accent colour",
+            "required": false
+          },
+          {
+            "name": "shooting_star",
+            "type": "toggle",
+            "label": "Add shooting star animation",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Write a wish, set the star density, and pick a constellation. The starfield animates when the recipient opens their gift.",
       "allow_anonymous_sender": true,
       "is_active": true
     },
@@ -194,7 +951,7 @@
       "category": "BADGE",
       "renderer_type": "BADGE_GIFT",
       "template_slug": "birthday-queen-badge-template",
-      "description": "A shining badge gift that crowns the celebrant with a short title.",
+      "description": "A shining badge that crowns the celebrant with a custom title and glam aesthetic. Perfect for the queen of the day.",
       "price": "2.99",
       "currency": "gbp",
       "platform_fee_bps": 3000,
@@ -204,12 +961,194 @@
       },
       "customization_schema": {
         "fields": [
-          { "name": "recipient_name", "type": "text", "label": "Celebrant Name", "required": false, "max_length": 80 },
-          { "name": "message", "type": "text", "label": "Badge Title", "required": false, "max_length": 120 },
-          { "name": "sender_name", "type": "text", "label": "From", "required": false, "max_length": 80 }
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Celebrant's name",
+            "placeholder": "e.g. Queen Zara",
+            "required": false,
+            "max_length": 60
+          },
+          {
+            "name": "message",
+            "type": "text",
+            "label": "Badge caption",
+            "placeholder": "e.g. Crowned for the day",
+            "required": false,
+            "max_length": 100
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Gifted by",
+            "placeholder": "e.g. Your fans",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "crown_style",
+            "type": "select",
+            "label": "Crown style",
+            "required": false,
+            "options": ["diamond-tiara", "imperial-crown", "floral-wreath", "minimalist-arc", "vintage-deco"]
+          },
+          {
+            "name": "badge_color",
+            "type": "select",
+            "label": "Badge colour",
+            "required": false,
+            "options": ["rose-gold", "hot-pink", "champagne", "royal-purple", "pearl-white", "midnight-glam"]
+          },
+          {
+            "name": "sparkle",
+            "type": "toggle",
+            "label": "Add sparkle animation",
+            "required": false
+          }
         ]
       },
-      "purchase_instructions": "Perfect for playful page flair and short titles.",
+      "purchase_instructions": "Add a name and caption, choose a crown and colour. The badge drops instantly onto the birthday page for the world to see.",
+      "allow_anonymous_sender": true,
+      "is_active": true
+    },
+    {
+      "slug": "birthday-king-badge",
+      "name": "Birthday King Badge",
+      "category": "BADGE",
+      "renderer_type": "BADGE_GIFT",
+      "template_slug": "birthday-king-badge-template",
+      "description": "A bold, regal badge built for kings. Commanding design with gold crowns and powerful typography — claim the throne for the day.",
+      "price": "2.99",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "title": { "x": "50%", "y": "36%", "align": "center", "fontSize": 20, "fontWeight": 800, "color": "#d4af37" },
+        "message": { "x": "50%", "y": "70%", "align": "center", "fontSize": 14, "fontWeight": 500, "color": "#f5e8c8", "maxWidth": "70%" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "King's name",
+            "placeholder": "e.g. King Marcus",
+            "required": false,
+            "max_length": 60
+          },
+          {
+            "name": "message",
+            "type": "text",
+            "label": "Royal decree",
+            "placeholder": "e.g. Ruler of this fine day",
+            "required": false,
+            "max_length": 100
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Gifted by",
+            "placeholder": "e.g. The court",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "crown_style",
+            "type": "select",
+            "label": "Crown style",
+            "required": false,
+            "options": ["medieval-crown", "crown-jewels", "minimalist-arc", "bold-spikes", "viking-horns"]
+          },
+          {
+            "name": "badge_color",
+            "type": "select",
+            "label": "Badge colour",
+            "required": false,
+            "options": ["black-gold", "navy-gold", "emerald-gold", "burgundy-gold", "slate-silver", "obsidian"]
+          },
+          {
+            "name": "show_crest",
+            "type": "toggle",
+            "label": "Show royal crest detail",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Crown him with a name and decree. Choose a crown style and colour — the badge appears on his birthday page immediately.",
+      "allow_anonymous_sender": true,
+      "is_active": true
+    },
+    {
+      "slug": "legend-of-the-day-badge",
+      "name": "Legend of the Day Badge",
+      "category": "BADGE",
+      "renderer_type": "BADGE_GIFT",
+      "template_slug": "legend-of-the-day-badge-template",
+      "description": "An award-style badge for anyone who's earned legendary status. Gender-neutral, bold, and perfectly suited for milestone birthdays.",
+      "price": "3.49",
+      "currency": "gbp",
+      "platform_fee_bps": 3000,
+      "layout_config": {
+        "title": { "x": "50%", "y": "30%", "align": "center", "fontSize": 13, "fontWeight": 700, "color": "#a78bfa" },
+        "subtitle": { "x": "50%", "y": "47%", "align": "center", "fontSize": 22, "fontWeight": 900, "color": "#ffffff" },
+        "message": { "x": "50%", "y": "70%", "align": "center", "fontSize": 13, "fontWeight": 400, "color": "#e2d9f3", "maxWidth": "72%" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Legend's name",
+            "placeholder": "e.g. Alex Chen",
+            "required": false,
+            "max_length": 60
+          },
+          {
+            "name": "legend_title",
+            "type": "text",
+            "label": "Official legend title",
+            "placeholder": "e.g. CERTIFIED LEGEND",
+            "required": false,
+            "max_length": 60
+          },
+          {
+            "name": "achievement_text",
+            "type": "text",
+            "label": "Achievement line",
+            "placeholder": "e.g. For being absolutely unforgettable",
+            "required": false,
+            "max_length": 120
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Presented by",
+            "placeholder": "e.g. Everyone who knows you",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "badge_style",
+            "type": "select",
+            "label": "Badge shape",
+            "required": false,
+            "options": ["circular-seal", "shield", "star-burst", "hexagon", "ribbon-award", "diamond"]
+          },
+          {
+            "name": "color_theme",
+            "type": "select",
+            "label": "Colour theme",
+            "required": false,
+            "options": ["purple-gold", "black-gold", "teal-silver", "midnight-blue", "rainbow-foil", "rose-copper"]
+          },
+          {
+            "name": "show_confetti",
+            "type": "toggle",
+            "label": "Confetti reveal animation",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Name the legend, write their title and achievement. Pick a badge shape and colour theme. Displayed with full ceremony on their birthday page.",
       "allow_anonymous_sender": true,
       "is_active": true
     },
@@ -219,7 +1158,7 @@
       "category": "VIDEO",
       "renderer_type": "VIDEO_TEMPLATE",
       "template_slug": "birthday-highlight-video-template",
-      "description": "A video-style gift preview card with a custom headline and message summary.",
+      "description": "An energetic video-style gift with a custom headline, message reel, and vibrant transitions. Show-stopping from the first frame.",
       "price": "14.99",
       "currency": "gbp",
       "platform_fee_bps": 3000,
@@ -229,12 +1168,142 @@
       },
       "customization_schema": {
         "fields": [
-          { "name": "recipient_name", "type": "text", "label": "Recipient Name", "required": false, "max_length": 80 },
-          { "name": "message", "type": "textarea", "label": "Highlight Message", "required": false, "max_length": 240 },
-          { "name": "sender_name", "type": "text", "label": "From", "required": false, "max_length": 80 }
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "Recipient's name",
+            "placeholder": "e.g. Happy Birthday Tolu",
+            "required": true,
+            "max_length": 80
+          },
+          {
+            "name": "message",
+            "type": "textarea",
+            "label": "Highlight message",
+            "placeholder": "A quick tribute shown across the reel…",
+            "required": false,
+            "max_length": 240
+          },
+          {
+            "name": "sender_name",
+            "type": "text",
+            "label": "Produced by",
+            "placeholder": "e.g. Your crew",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "video_style",
+            "type": "select",
+            "label": "Video style",
+            "required": false,
+            "options": ["energetic-pop", "cinematic-slow", "minimal-clean", "retro-vhs", "vaporwave-aesthetic", "celebration-reel"]
+          },
+          {
+            "name": "music_mood",
+            "type": "select",
+            "label": "Music mood",
+            "required": false,
+            "options": ["upbeat-pop", "emotional-strings", "chill-lo-fi", "epic-orchestral", "jazzy-birthday", "hype-beat"]
+          },
+          {
+            "name": "transition_style",
+            "type": "select",
+            "label": "Transition style",
+            "required": false,
+            "options": ["smooth-fade", "flash-cut", "swipe-horizontal", "zoom-burst", "glitch", "film-reel"]
+          },
+          {
+            "name": "show_countdown",
+            "type": "toggle",
+            "label": "Birthday countdown opener",
+            "required": false
+          }
         ]
       },
-      "purchase_instructions": "V1 shows a premium preview card and the captured customization summary.",
+      "purchase_instructions": "Set a name and message, choose your style, mood, and transitions. The video preview card goes live on their birthday page immediately.",
+      "allow_anonymous_sender": false,
+      "is_active": true
+    },
+    {
+      "slug": "cinematic-tribute",
+      "name": "Cinematic Tribute",
+      "category": "VIDEO",
+      "renderer_type": "VIDEO_TEMPLATE",
+      "template_slug": "cinematic-tribute-template",
+      "description": "A premium film-grade tribute with a letterboxed cinematic look, grain texture, and a personal director's note. The most elevated gift on the platform.",
+      "price": "19.99",
+      "currency": "gbp",
+      "platform_fee_bps": 2500,
+      "layout_config": {
+        "title": { "x": "50%", "y": "22%", "align": "center", "fontSize": 12, "fontWeight": 400, "color": "#c4b89a" },
+        "subtitle": { "x": "50%", "y": "38%", "align": "center", "fontSize": 26, "fontWeight": 700, "color": "#f5f0e8" },
+        "message": { "x": "50%", "y": "68%", "align": "center", "fontSize": 15, "fontWeight": 300, "color": "#e8e2d6", "maxWidth": "74%" },
+        "sender": { "x": "50%", "y": "86%", "align": "center", "fontSize": 12, "fontWeight": 500, "color": "#9a8e78" }
+      },
+      "customization_schema": {
+        "fields": [
+          {
+            "name": "recipient_name",
+            "type": "text",
+            "label": "The subject",
+            "placeholder": "e.g. Olivia",
+            "required": true,
+            "max_length": 60
+          },
+          {
+            "name": "tribute_headline",
+            "type": "text",
+            "label": "Film title",
+            "placeholder": "e.g. A Story Worth Celebrating",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "personal_note",
+            "type": "textarea",
+            "label": "Tribute note",
+            "placeholder": "A few lines that will last a lifetime…",
+            "required": false,
+            "max_length": 400
+          },
+          {
+            "name": "director_credit",
+            "type": "text",
+            "label": "Director's credit",
+            "placeholder": "e.g. Directed with love by Marcus",
+            "required": false,
+            "max_length": 80
+          },
+          {
+            "name": "film_grade",
+            "type": "select",
+            "label": "Film grade",
+            "required": false,
+            "options": ["warm-vintage", "cool-modern", "noir-monochrome", "golden-hour", "neon-future", "faded-polaroid"]
+          },
+          {
+            "name": "aspect_ratio_style",
+            "type": "select",
+            "label": "Aspect ratio",
+            "required": false,
+            "options": ["widescreen-21-9", "anamorphic-scope", "classic-16-9", "square-social", "vertical-story"]
+          },
+          {
+            "name": "film_grain",
+            "type": "toggle",
+            "label": "Add film grain texture",
+            "required": false
+          },
+          {
+            "name": "letterbox",
+            "type": "toggle",
+            "label": "Cinematic letterbox bars",
+            "required": false
+          }
+        ]
+      },
+      "purchase_instructions": "Title the film, write a tribute note, and add a director's credit. Set your grade and format for a truly cinematic gift that honours the person perfectly.",
       "allow_anonymous_sender": false,
       "is_active": true
     }

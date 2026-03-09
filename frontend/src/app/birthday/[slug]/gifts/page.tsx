@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { GiftCategoryPills } from "@/components/gifts/GiftCategoryPills";
 import { GiftGrid } from "@/components/gifts/GiftGrid";
 import { GiftCustomizeModal } from "@/components/gifts/GiftCustomizeModal";
+import { GiftPreviewModal } from "@/components/gifts/GiftPreviewModal";
 import { GiftsReceivedWall } from "@/components/gifts/GiftsReceivedWall";
 import { useGiftCatalog, useBirthdayGifts } from "@/features/gifts/queries";
 import { useBirthdayProfile } from "@/features/birthday/api";
@@ -30,6 +31,7 @@ export default function GiftStorefrontPage() {
   const [activeCategory, setActiveCategory] = useState<GiftCategory | "ALL">("ALL");
   const catalogQuery = useGiftCatalog(activeCategory === "ALL" ? undefined : activeCategory);
   const giftsQuery = useBirthdayGifts(slug);
+  const [previewProduct, setPreviewProduct] = useState<GiftProduct | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<GiftProduct | null>(null);
 
   const profile = profileQuery.data;
@@ -46,6 +48,17 @@ export default function GiftStorefrontPage() {
           defaultBuyerName={user ? `${user.first_name} ${user.last_name}`.trim() : ""}
           defaultBuyerEmail={user?.email ?? ""}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+      {previewProduct && (
+        <GiftPreviewModal
+          product={previewProduct}
+          isOpen
+          onClose={() => setPreviewProduct(null)}
+          onCustomize={(product) => {
+            setPreviewProduct(null);
+            setSelectedProduct(product);
+          }}
         />
       )}
 
@@ -74,7 +87,8 @@ export default function GiftStorefrontPage() {
             <GiftGrid
               products={catalogQuery.data ?? []}
               isLoading={catalogQuery.isLoading}
-              onSelect={setSelectedProduct}
+              onPreview={setPreviewProduct}
+              onCustomize={setSelectedProduct}
             />
           </div>
 

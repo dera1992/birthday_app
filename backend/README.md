@@ -76,6 +76,7 @@ Relevant webhook events handled:
 - `account.updated`
 
 Support contributions use a platform PaymentIntent with `metadata.type=support_contribution`.
+Wishlist item contributions use `metadata.type=wishlist_contribution` and credit `WishlistItem.amount_raised` on success.
 
 ## Endpoint List
 
@@ -106,7 +107,28 @@ Support contributions use a platform PaymentIntent with `metadata.type=support_c
 - `GET /api/birthday-profile/{slug}/messages`
 - `POST /api/support-messages/{id}/approve`
 - `POST /api/support-messages/{id}/reject`
+- `POST /api/support-messages/{id}/react` — celebrant adds emoji reaction
+- `POST /api/support-messages/{id}/reply` — celebrant replies to approved message
+- `GET /api/birthday-profile/{slug}/public-wishlist` — public items (hidden after birthday passes)
+- `POST /api/wishlist-items/{id}/contributions/create-intent` — anonymous/authenticated chip-in
 - `POST /api/birthday-profile/{slug}/contributions/create-intent`
+- `GET /api/birthday-profile/{slug}/contributions` — owner only
+- `GET /api/referral-products?category=` — curated product marketplace
+- `POST /api/referral-products/{id}/click` — track affiliate click
+
+### Wishlist business rules
+- `WishlistItem.visibility`: PUBLIC (default) or PRIVATE. Private items are only visible to the celebrant.
+- Public items are auto-hidden from `/public-wishlist` once the celebrant's birthday (day+month) has passed for the current year.
+- `allow_contributions`: enables per-item crowd-funding. `target_amount` (max £100) is required when enabled.
+- Contributions are rejected if the item is already fully funded or if the requested amount would exceed the remaining target.
+- On `payment_intent.succeeded` with `metadata.type=wishlist_contribution`, `WishlistItem.amount_raised` is incremented atomically.
+
+### Referral products
+- `ReferralProduct` is a curated catalog of affiliate/partner products managed via Django admin.
+- Seed 7 sample products: `python manage.py seed_referral_products`
+- Click tracking via `POST /api/referral-products/{id}/click` (increments `click_count`).
+- `WishlistItem` can link to a `ReferralProduct` via `source_type=REFERRAL_PRODUCT`.
+- For referral-linked items, the affiliate URL is used as the external link on the public birthday page.
 
 ### Events
 

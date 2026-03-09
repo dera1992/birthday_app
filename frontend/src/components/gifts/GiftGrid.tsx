@@ -1,5 +1,6 @@
 "use client";
 
+import { AIGiftCard } from "./AIGiftCard";
 import { GiftCard } from "./GiftCard";
 import type { GiftProduct } from "@/features/gifts/types";
 
@@ -23,10 +24,14 @@ function GiftCardSkeleton() {
 interface GiftGridProps {
   products: GiftProduct[];
   isLoading: boolean;
-  onSelect: (product: GiftProduct) => void;
+  onPreview: (product: GiftProduct) => void;
+  onCustomize: (product: GiftProduct) => void;
+  /** If provided, an AI gift card for this AI product will be appended to the grid. */
+  aiProduct?: GiftProduct | null;
+  onAICustomize?: (product: GiftProduct) => void;
 }
 
-export function GiftGrid({ products, isLoading, onSelect }: GiftGridProps) {
+export function GiftGrid({ products, isLoading, onPreview, onCustomize, aiProduct, onAICustomize }: GiftGridProps) {
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -37,7 +42,9 @@ export function GiftGrid({ products, isLoading, onSelect }: GiftGridProps) {
     );
   }
 
-  if (!products.length) {
+  const regularProducts = products.filter((p) => !p.is_ai_generated_product);
+
+  if (!regularProducts.length && !aiProduct) {
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
         No gifts available in this category yet.
@@ -47,9 +54,12 @@ export function GiftGrid({ products, isLoading, onSelect }: GiftGridProps) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {products.map((product) => (
-        <GiftCard key={product.id} product={product} onSelect={onSelect} />
+      {regularProducts.map((product) => (
+        <GiftCard key={product.id} product={product} onPreview={onPreview} onCustomize={onCustomize} />
       ))}
+      {aiProduct && onAICustomize ? (
+        <AIGiftCard product={aiProduct} onCustomize={onAICustomize} />
+      ) : null}
     </div>
   );
 }

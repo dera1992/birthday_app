@@ -77,12 +77,17 @@ def create_payment_intent_for_application(event: BirthdayEvent, application: Eve
         raise ValidationError("Application must be approved before payment.")
     if event.payment_mode == BirthdayEvent.PAYMENT_MODE_FREE:
         raise ValidationError("This event does not require payment.")
+    fee_percent = Decimal(str(settings.STRIPE_PLATFORM_FEE_PERCENT))
+    platform_amount = (event.amount * fee_percent / 100).quantize(Decimal("0.01"))
+    celebrant_amount = event.amount - platform_amount
     payment, _ = EventPayment.objects.get_or_create(
         event=event,
         attendee=user,
         defaults={
             "application": application,
             "amount": event.amount,
+            "platform_amount": platform_amount,
+            "celebrant_amount": celebrant_amount,
             "currency": event.currency,
             "transfer_group": f"event_{event.id}",
         },
@@ -173,15 +178,54 @@ def sync_support_contribution_status(contribution: SupportContribution, status_v
     return contribution
 
 
+def create_wishlist_contribution_payment_intent(contribution, idempotency_key=None):
+    if contribution.stripe_payment_intent_id:
+        try:
+            intent = stripe.PaymentIntent.retrieve(contribution.stripe_payment_intent_id)
+        except Exception as exc:
+            raise_payment_provider_error(exc)
+        return contribution, intent
+    fee_percent = Decimal(str(settings.STRIPE_PLATFORM_FEE_PERCENT))
+    platform_amount = (contribution.amount * fee_percent / 100).quantize(Decimal("0.01"))
+    celebrant_amount = contribution.amount - platform_amount
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=to_minor_units(contribution.amount, contribution.currency),
+            currency=contribution.currency.lower(),
+            metadata={
+                "type": "wishlist_contribution",
+                "contribution_id": str(contribution.id),
+                "item_id": str(contribution.item_id),
+            },
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise_payment_provider_error(exc)
+    contribution.stripe_payment_intent_id = intent["id"]
+    contribution.platform_amount = platform_amount
+    contribution.celebrant_amount = celebrant_amount
+    contribution.save(update_fields=["stripe_payment_intent_id", "platform_amount", "celebrant_amount"])
+    return contribution, intent
+
+
+def sync_wishlist_contribution_status(contribution, status_value: str, last_error: str = ""):
+    contribution.status = status_value
+    contribution.last_error = last_error
+    contribution.save(update_fields=["status", "last_error"])
+    return contribution
+
+
 def release_event_transfers(event: BirthdayEvent):
+    from apps.wallet.models import WalletLedgerEntry
     payee = event.payee_user or event.host
     connect_account = getattr(payee, "connect_account", None)
     if not connect_account:
         raise ValidationError("Host must complete Connect onboarding before funds can be released.")
     for payment in event.payments.filter(status=EventPayment.STATUS_HELD_ESCROW, stripe_transfer_id=""):
+        payout_amount = payment.celebrant_amount if payment.celebrant_amount else payment.amount
         try:
             transfer = stripe.Transfer.create(
-                amount=to_minor_units(payment.amount, payment.currency),
+                amount=to_minor_units(payout_amount, payment.currency),
                 currency=payment.currency.lower(),
                 destination=connect_account.stripe_account_id,
                 transfer_group=payment.transfer_group or f"event_{event.id}",
@@ -193,3 +237,8 @@ def release_event_transfers(event: BirthdayEvent):
         payment.status = EventPayment.STATUS_RELEASED
         payment.transferred_at = timezone.now()
         payment.save(update_fields=["stripe_transfer_id", "status", "transferred_at", "updated_at"])
+        # Settle the corresponding wallet ledger entry
+        WalletLedgerEntry.objects.filter(
+            source_event_payment=payment,
+            status__in=[WalletLedgerEntry.Status.PENDING, WalletLedgerEntry.Status.AVAILABLE],
+        ).update(status=WalletLedgerEntry.Status.SETTLED)

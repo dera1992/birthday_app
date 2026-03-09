@@ -28,6 +28,8 @@ class WalletLedgerEntry(models.Model):
     class Type(models.TextChoices):
         GIFT_EARNED = "GIFT_EARNED", "Gift Earned"
         GIFT_REFUND_REVERSAL = "GIFT_REFUND_REVERSAL", "Gift Refund Reversal"
+        CONTRIBUTION_EARNED = "CONTRIBUTION_EARNED", "Contribution Earned"
+        EVENT_REGISTRATION_EARNED = "EVENT_REGISTRATION_EARNED", "Event Registration Earned"
         PAYOUT = "PAYOUT", "Payout"
         ADJUSTMENT = "ADJUSTMENT", "Adjustment"
 
@@ -43,6 +45,20 @@ class WalletLedgerEntry(models.Model):
     status = models.CharField(max_length=15, choices=Status.choices)
     source_purchase = models.ForeignKey(
         "gifts.GiftPurchase",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ledger_entries",
+    )
+    source_wishlist_contribution = models.ForeignKey(
+        "birthdays.WishlistContribution",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ledger_entries",
+    )
+    source_event_payment = models.ForeignKey(
+        "payments.EventPayment",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

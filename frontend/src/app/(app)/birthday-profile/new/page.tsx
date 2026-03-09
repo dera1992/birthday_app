@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCreateBirthdayProfile } from "@/features/birthday/api";
+import { MultiSelectDropdown } from "@/features/birthday/profile-form-dropdown";
+import { INTEREST_OPTIONS, OCCUPATION_OPTIONS } from "@/features/birthday/profile-form-options";
 import { getErrorMessage } from "@/lib/api/errors";
 import { birthdayProfileDetailsSchema } from "@/lib/validators/birthday";
 
@@ -30,6 +32,7 @@ export default function CreateBirthdayProfilePage() {
   const router = useRouter();
   const createProfile = useCreateBirthdayProfile();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const form = useForm<BirthdayProfileCreateValues>({
     resolver: zodResolver(
       birthdayProfileDetailsSchema.extend({
@@ -58,6 +61,10 @@ export default function CreateBirthdayProfilePage() {
       router.replace(`/birthday-profile/${user.birthday_profile_slug}/edit`);
     }
   }, [router, user?.birthday_profile_slug]);
+
+  useEffect(() => {
+    form.setValue("interests", selectedInterests.join(", "));
+  }, [form, selectedInterests]);
 
   async function onSubmit(values: BirthdayProfileCreateValues) {
     setSubmitError(null);
@@ -139,7 +146,13 @@ export default function CreateBirthdayProfilePage() {
             </div>
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="interests">Interests <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input id="interests" placeholder="brunch, live music, travel" {...form.register("interests")} />
+              <input type="hidden" {...form.register("interests")} />
+              <MultiSelectDropdown
+                options={INTEREST_OPTIONS}
+                selected={selectedInterests}
+                onChange={setSelectedInterests}
+                placeholder="Select interests"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">Gender</Label>
@@ -173,7 +186,18 @@ export default function CreateBirthdayProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="occupation">Occupation <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input id="occupation" {...form.register("occupation")} />
+              <select
+                id="occupation"
+                className="flex h-11 w-full rounded-2xl border border-input bg-background/80 px-4 text-sm"
+                {...form.register("occupation")}
+              >
+                <option value="">Not set</option>
+                {OCCUPATION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="lg:col-span-2">

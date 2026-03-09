@@ -136,6 +136,36 @@ export type BirthdayWishlistReservation = {
   reserved_at: string;
 };
 
+export type ReferralProduct = {
+  id: number;
+  name: string;
+  slug: string;
+  category: string;
+  description: string;
+  price: string | null;
+  currency: string;
+  image_url: string;
+  affiliate_url: string;
+  merchant_name: string;
+};
+
+export type WishlistContribution = {
+  id: number;
+  contributor_name: string;
+  contributor_email: string;
+  amount: string;
+  currency: string;
+  status: "PENDING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  stripe_payment_intent_id: string;
+  created_at: string;
+};
+
+export type WishlistContributionIntentResponse = {
+  contribution: WishlistContribution;
+  client_secret: string | null;
+  detail: string;
+};
+
 export type BirthdayWishlistItem = {
   id: number;
   title: string;
@@ -145,6 +175,15 @@ export type BirthdayWishlistItem = {
   currency: string;
   is_reserved: boolean;
   reservation?: BirthdayWishlistReservation | null;
+  visibility: "PUBLIC" | "PRIVATE";
+  source_type: "CUSTOM" | "REFERRAL_PRODUCT";
+  referral_product?: ReferralProduct | null;
+  allow_contributions: boolean;
+  contribution_public: boolean;
+  target_amount: string | null;
+  amount_raised: string;
+  remaining_amount: string | null;
+  is_fully_funded: boolean;
   created_at: string;
 };
 
@@ -154,6 +193,9 @@ export type BirthdayMessage = {
   body: string;
   moderation_status: string;
   created_at: string;
+  celebrant_reaction: string;
+  reply_text: string;
+  reply_created_at: string | null;
 };
 
 export type BirthdayProfile = {
@@ -273,7 +315,37 @@ export type GiftProduct = {
   description: string;
   price: string;
   currency: string;
+  catalog_preview_asset_url: string;
   preview_asset_url: string;
+  template_asset_url: string;
+  renderer_type: "CARD_TEMPLATE" | "FLOWER_GIFT" | "ANIMATED_MESSAGE" | "BADGE_GIFT" | "VIDEO_TEMPLATE";
+  customization_schema: {
+    fields: Array<{
+      name: string;
+      type: "text" | "textarea" | "select" | "color" | "number" | "toggle";
+      label: string;
+      required: boolean;
+      max_length?: number;
+      options?: string[];
+      min?: number;
+      max?: number;
+      placeholder?: string;
+    }>;
+  };
+  layout_config: Record<string, unknown>;
+  default_config: Record<string, unknown>;
+  purchase_instructions: string;
+  allow_anonymous_sender: boolean;
+  template?: {
+    id: number;
+    name: string;
+    slug: string;
+    renderer_type: string;
+    catalog_preview_asset_url: string;
+    template_asset_url: string;
+    preview_asset_url: string;
+    default_config: Record<string, unknown>;
+  } | null;
 };
 
 export type GiftPurchase = {
@@ -282,10 +354,16 @@ export type GiftPurchase = {
   buyer_name: string;
   from_name: string;
   custom_message: string;
+  customization_data: Record<string, unknown>;
+  rendered_snapshot_url: string;
+  is_anonymous: boolean;
+  renderer_type: "CARD_TEMPLATE" | "FLOWER_GIFT" | "ANIMATED_MESSAGE" | "BADGE_GIFT" | "VIDEO_TEMPLATE";
   visibility: "PUBLIC" | "PRIVATE";
   status: "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED";
   gross_amount: string;
   celebrant_amount: string;
+  share_url: string;
+  download_url: string;
   created_at: string;
 };
 
@@ -305,10 +383,13 @@ export type WalletAccount = {
 
 export type WalletLedgerEntry = {
   id: number;
-  type: "GIFT_EARNED" | "GIFT_REFUND_REVERSAL" | "PAYOUT" | "ADJUSTMENT";
+  type: "GIFT_EARNED" | "GIFT_REFUND_REVERSAL" | "CONTRIBUTION_EARNED" | "EVENT_REGISTRATION_EARNED" | "PAYOUT" | "ADJUSTMENT";
   amount: string;
   currency: string;
   status: "PENDING" | "AVAILABLE" | "SETTLED";
+  source_description: string;
+  sender_name: string;
+  sender_email: string;
   created_at: string;
 };
 

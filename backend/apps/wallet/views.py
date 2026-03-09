@@ -67,7 +67,13 @@ class WalletWithdrawView(APIView):
         serializer = WithdrawSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         amount = serializer.validated_data["amount"]
-        entry = execute_withdraw(request.user, amount)
+        try:
+            entry = execute_withdraw(request.user, amount)
+        except Exception as exc:
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+            if isinstance(exc, DRFValidationError):
+                raise
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(
             {
                 "detail": "Payout initiated.",

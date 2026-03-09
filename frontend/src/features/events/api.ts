@@ -159,6 +159,18 @@ export function useToggleExpand(eventId: number) {
   });
 }
 
+export function useProposeVenue(eventId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { venue_name: string }) =>
+      apiRequest<EventRecord>(`/events/${eventId}/venue/propose`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["event", eventId] }),
+  });
+}
+
 export function useConfirmVenue(eventId: number) {
   const queryClient = useQueryClient();
   return useMutation({
