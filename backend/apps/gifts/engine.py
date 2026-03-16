@@ -50,38 +50,54 @@ LEGACY_SCHEMA_BY_CATEGORY = {
     "CARD": {
         "fields": [
             {"name": "sender_name", "type": "text", "label": "From", "required": False, "max_length": 80},
+            {"name": "recipient_name", "type": "text", "label": "To (recipient name)", "required": False, "max_length": 80},
             {"name": "message", "type": "textarea", "label": "Birthday message", "required": False, "max_length": 300},
-            {
-                "name": "theme_color",
-                "type": "select",
-                "label": "Theme color",
-                "required": False,
-                "options": ["pink", "gold", "blue"],
-            },
+            {"name": "theme_color", "type": "select", "label": "Colour theme", "required": False,
+             "options": ["pink", "gold", "blue", "purple", "mint", "coral"]},
+            {"name": "card_style", "type": "select", "label": "Card style", "required": False,
+             "options": ["confetti", "balloons", "stars", "bokeh", "geometric"]},
+            {"name": "font_style", "type": "select", "label": "Font style", "required": False,
+             "options": ["bold", "elegant", "playful", "modern"]},
         ]
     },
     "FLOWER": {
         "fields": [
             {"name": "sender_name", "type": "text", "label": "From", "required": False, "max_length": 80},
             {"name": "message", "type": "textarea", "label": "Card note", "required": False, "max_length": 200},
+            {"name": "font_style", "type": "select", "label": "Font style", "required": False,
+             "options": ["bold", "elegant", "playful", "modern"]},
         ]
     },
     "MESSAGE": {
         "fields": [
             {"name": "sender_name", "type": "text", "label": "From", "required": False, "max_length": 80},
             {"name": "message", "type": "textarea", "label": "Message", "required": True, "max_length": 500},
+            {"name": "theme_color", "type": "select", "label": "Colour theme", "required": False,
+             "options": ["purple", "blue", "pink", "gold"]},
+            {"name": "font_style", "type": "select", "label": "Font style", "required": False,
+             "options": ["bold", "elegant", "playful", "modern"]},
         ]
     },
     "BADGE": {
         "fields": [
             {"name": "sender_name", "type": "text", "label": "From", "required": False, "max_length": 80},
+            {"name": "recipient_name", "type": "text", "label": "Recipient name", "required": False, "max_length": 80},
             {"name": "message", "type": "text", "label": "Short dedication", "required": False, "max_length": 120},
+            {"name": "badge_color", "type": "select", "label": "Badge colour", "required": False,
+             "options": ["rose-gold", "hot-pink", "champagne", "royal-purple", "pearl-white", "midnight-glam",
+                         "black-gold", "navy-gold", "emerald-gold", "burgundy-gold", "slate-silver", "obsidian"]},
+            {"name": "crown_style", "type": "select", "label": "Crown style", "required": False,
+             "options": ["diamond-tiara", "imperial-crown", "floral-wreath", "minimalist-arc", "vintage-deco",
+                         "medieval-crown", "crown-jewels", "bold-spikes", "viking-horns"]},
         ]
     },
     "VIDEO": {
         "fields": [
             {"name": "sender_name", "type": "text", "label": "From", "required": False, "max_length": 80},
+            {"name": "recipient_name", "type": "text", "label": "To (recipient name)", "required": False, "max_length": 80},
             {"name": "message", "type": "textarea", "label": "Video message", "required": False, "max_length": 300},
+            {"name": "font_style", "type": "select", "label": "Font style", "required": False,
+             "options": ["bold", "elegant", "playful", "modern"]},
         ]
     },
 }
@@ -203,9 +219,22 @@ def legacy_schema_for_product(product) -> dict:
 
 
 def resolve_customization_schema(product) -> dict:
-    raw_schema = getattr(product, "customization_schema", None) or getattr(getattr(product, "template", None), "config_schema", None)
-    if raw_schema:
-        return validate_customization_schema_definition(raw_schema)
+    """Return the category-level schema for this product.
+
+    Resolution order:
+    1. DB-managed GiftCategorySchema for product.category (editable via admin)
+    2. Hardcoded LEGACY_SCHEMA_BY_CATEGORY fallback
+    Product-level customization_schema is intentionally ignored — all products
+    in a category share the same form fields.
+    """
+    try:
+        from django.apps import apps as django_apps
+        GiftCategorySchema = django_apps.get_model("gifts", "GiftCategorySchema")
+        obj = GiftCategorySchema.objects.filter(category=product.category).first()
+        if obj and obj.customization_schema:
+            return validate_customization_schema_definition(obj.customization_schema)
+    except Exception:
+        pass
     return legacy_schema_for_product(product)
 
 

@@ -11,11 +11,18 @@ def get_wallet_for_user(user) -> WalletAccount:
     return wallet
 
 
+EARNING_TYPES = (
+    WalletLedgerEntry.Type.GIFT_EARNED,
+    WalletLedgerEntry.Type.CONTRIBUTION_EARNED,
+    WalletLedgerEntry.Type.EVENT_REGISTRATION_EARNED,
+)
+
+
 def get_pending_entries_ready_to_release():
-    """Return PENDING ledger entries older than FRAUD_BUFFER_DAYS."""
+    """Return PENDING earning ledger entries older than FRAUD_BUFFER_DAYS."""
     cutoff = timezone.now() - timedelta(days=FRAUD_BUFFER_DAYS)
     return WalletLedgerEntry.objects.filter(
-        type=WalletLedgerEntry.Type.GIFT_EARNED,
+        type__in=EARNING_TYPES,
         status=WalletLedgerEntry.Status.PENDING,
         created_at__lte=cutoff,
     ).select_related("user")

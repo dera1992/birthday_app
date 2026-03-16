@@ -189,6 +189,35 @@ class GiftPurchase(models.Model):
         return f"Gift {self.product.name} -> {self.celebrant} [{self.status}]"
 
 
+class GiftCategorySchema(models.Model):
+    """Stores the canonical customization schema for each gift category.
+    All products in a category share this schema — no per-product overrides."""
+
+    category = models.CharField(
+        max_length=20,
+        choices=GiftProduct.Category.choices,
+        unique=True,
+        help_text="Each category may have exactly one schema.",
+    )
+    customization_schema = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dynamic field schema used to build the customization form for all gifts in this category.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category"]
+        verbose_name = "Gift category schema"
+        verbose_name_plural = "Gift category schemas"
+
+    def clean(self):
+        self.customization_schema = validate_customization_schema_definition(self.customization_schema)
+
+    def __str__(self):
+        return f"Schema: {self.get_category_display()}"
+
+
 class AIGenerationJob(models.Model):
     class JobStatus(models.TextChoices):
         PENDING = "PENDING", "Pending"

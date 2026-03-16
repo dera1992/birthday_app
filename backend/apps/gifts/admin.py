@@ -1,8 +1,62 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from apps.gifts.engine import LEGACY_LAYOUT_BY_RENDERER, resolve_preview_asset_url, resolve_template_asset_url
-from apps.gifts.models import AIGenerationJob, GiftProduct, GiftPurchase, GiftTemplate
+from apps.gifts.engine import LEGACY_LAYOUT_BY_RENDERER, LEGACY_SCHEMA_BY_CATEGORY, resolve_preview_asset_url, resolve_template_asset_url
+from apps.gifts.models import AIGenerationJob, GiftCategorySchema, GiftProduct, GiftPurchase, GiftTemplate
+
+
+@admin.register(GiftCategorySchema)
+class GiftCategorySchemaAdmin(admin.ModelAdmin):
+    list_display = ("category", "field_summary", "updated_at")
+    readonly_fields = ("updated_at", "schema_guide")
+    fields = ("category", "customization_schema", "schema_guide", "updated_at")
+
+    @admin.display(description="Fields")
+    def field_summary(self, obj):
+        schema = obj.customization_schema or {}
+        fields = schema.get("fields", [])
+        if not fields:
+            return "—"
+        return ", ".join(f["name"] for f in fields)
+
+    @admin.display(description="Schema guide")
+    def schema_guide(self, obj):
+        import json
+        example = {
+            "fields": [
+                {"name": "sender_name", "type": "text", "label": "From", "required": False, "max_length": 80},
+                {"name": "recipient_name", "type": "text", "label": "To", "required": False, "max_length": 80},
+                {"name": "message", "type": "textarea", "label": "Message", "required": False, "max_length": 300},
+                {"name": "theme_color", "type": "select", "label": "Colour theme", "required": False,
+                 "options": ["pink", "gold", "blue", "purple"]},
+                {"name": "card_style", "type": "select", "label": "Card style", "required": False,
+                 "options": ["confetti", "balloons", "stars"]},
+                {"name": "font_style", "type": "select", "label": "Font style", "required": False,
+                 "options": ["bold", "elegant", "playful", "modern"]},
+            ]
+        }
+        category = getattr(obj, "category", None)
+        fallback = LEGACY_SCHEMA_BY_CATEGORY.get(category, {}) if category else {}
+        note = (
+            "<p style='color:#92400e;margin:0 0 8px'>"
+            "<strong>Note:</strong> If this record is empty or missing, the built-in fallback schema is used. "
+            "All products in this category will use this schema — no per-product overrides.</p>"
+        )
+        fallback_section = ""
+        if fallback:
+            fallback_section = (
+                f"<p style='margin:8px 0 4px'><strong>Built-in fallback for {category}:</strong></p>"
+                f"<pre style='white-space:pre-wrap;background:#f9fafb;padding:10px;border-radius:6px;font-size:12px'>"
+                f"{json.dumps(fallback, indent=2)}</pre>"
+            )
+        example_section = (
+            "<p style='margin:8px 0 4px'><strong>Supported field types:</strong> "
+            "<code>text</code>, <code>textarea</code>, <code>select</code>, "
+            "<code>color</code>, <code>number</code>, <code>toggle</code></p>"
+            f"<pre style='white-space:pre-wrap;background:#f0fdf4;padding:10px;border-radius:6px;font-size:12px'>"
+            f"{json.dumps(example, indent=2)}</pre>"
+        )
+        return mark_safe(note + fallback_section + example_section)
 
 
 @admin.register(GiftTemplate)
@@ -220,7 +274,7 @@ class GiftProductAdmin(admin.ModelAdmin):
             "fields": (
                 "name", "slug", "category", "renderer_type", "template",
                 "description", "price", "currency", "platform_fee_bps",
-                "layout_config", "customization_schema", "purchase_instructions",
+                "layout_config", "purchase_instructions",
                 "allow_anonymous_sender", "is_active",
                 "template_asset_preview", "preview_asset_preview",
                 "created_at", "updated_at",

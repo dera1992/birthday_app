@@ -3,6 +3,7 @@ from decimal import Decimal
 import stripe
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F
 from rest_framework.exceptions import ValidationError
 
 from apps.gifts.models import GiftPurchase
@@ -32,7 +33,7 @@ def credit_gift_earned(purchase: GiftPurchase) -> WalletLedgerEntry:
         source_purchase=purchase,
     )
     WalletAccount.objects.filter(pk=wallet.pk).update(
-        pending_balance=wallet.pending_balance + purchase.celebrant_amount
+        pending_balance=F("pending_balance") + purchase.celebrant_amount
     )
     return entry
 
@@ -53,7 +54,7 @@ def credit_contribution_earned(contribution) -> WalletLedgerEntry:
         source_wishlist_contribution=contribution,
     )
     WalletAccount.objects.filter(pk=wallet.pk).update(
-        pending_balance=wallet.pending_balance + credit
+        pending_balance=F("pending_balance") + credit
     )
     return entry
 
@@ -75,7 +76,7 @@ def credit_event_payment_earned(payment) -> WalletLedgerEntry:
         source_event_payment=payment,
     )
     WalletAccount.objects.filter(pk=wallet.pk).update(
-        pending_balance=wallet.pending_balance + credit
+        pending_balance=F("pending_balance") + credit
     )
     return entry
 
@@ -85,10 +86,10 @@ def release_pending_entry(entry: WalletLedgerEntry) -> WalletLedgerEntry:
     """Move a PENDING ledger entry to AVAILABLE (fraud buffer lifted)."""
     if entry.status != WalletLedgerEntry.Status.PENDING:
         return entry
-    wallet = get_or_create_wallet(entry.user)
+    wallet = WalletAccount.objects.select_for_update().get(user=entry.user)
     WalletAccount.objects.filter(pk=wallet.pk).update(
-        pending_balance=wallet.pending_balance - entry.amount,
-        available_balance=wallet.available_balance + entry.amount,
+        pending_balance=F("pending_balance") - entry.amount,
+        available_balance=F("available_balance") + entry.amount,
     )
     entry.status = WalletLedgerEntry.Status.AVAILABLE
     entry.save(update_fields=["status"])
