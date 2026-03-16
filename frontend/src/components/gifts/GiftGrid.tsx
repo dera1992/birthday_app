@@ -7,7 +7,7 @@ import type { GiftProduct } from "@/features/gifts/types";
 function GiftCardSkeleton() {
   return (
     <div className="animate-pulse overflow-hidden rounded-2xl border border-border bg-background/80">
-      <div className="h-32 w-full bg-muted/60" />
+      <div className="h-[220px] w-full bg-muted/60" />
       <div className="space-y-2 p-4">
         <div className="h-4 w-2/3 rounded-lg bg-muted/60" />
         <div className="h-3 w-full rounded-lg bg-muted/40" />

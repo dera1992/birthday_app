@@ -92,7 +92,14 @@ export default function RegisterPage() {
               <Button className="w-full" type="submit" disabled={registerMutation.isPending || loginMutation.isPending}>
                 Create account
               </Button>
-              <p className="mt-5 text-sm text-muted-foreground">
+              <p className="mt-3 text-xs text-muted-foreground">
+                By signing up, you agree to the{" "}
+                <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">Terms of Service</Link>
+                {" "}and{" "}
+                <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>
+                , including Cookie Use.
+              </p>
+              <p className="mt-4 text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link href="/login" className="font-semibold text-primary">
                   Sign in

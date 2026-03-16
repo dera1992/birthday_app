@@ -97,7 +97,7 @@ function LandingFooter() {
   const columns = [
     { heading: "Product", links: [{ href: "/", label: "Overview" }, { href: "/events", label: "Events feed" }, { href: "/connect", label: "Host payouts" }, { href: "/register", label: "Get started" }] },
     { heading: "Account", links: [{ href: "/login", label: "Sign in" }, { href: "/register", label: "Create account" }, { href: "/birthday-profile/new", label: "Birthday profile" }, { href: "/events/new", label: "Create event" }] },
-    { heading: "Company", links: [{ href: "/", label: "About" }, { href: "/", label: "Blog" }, { href: "/", label: "Careers" }, { href: "/", label: "Privacy policy" }] },
+    { heading: "Company", links: [{ href: "/about", label: "About" }, { href: "/privacy", label: "Privacy policy" }, { href: "/terms", label: "Terms & conditions" }] },
   ];
 
   return (

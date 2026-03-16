@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { type ComponentType, type Ref } from "react";
 
 import { AnimatedMessageRenderer } from "@/components/gifts/renderers/AnimatedMessageRenderer";
 import { BadgeRenderer } from "@/components/gifts/renderers/BadgeRenderer";
@@ -18,6 +18,7 @@ type GiftRendererProps = {
   compact?: boolean;
   catalogCompact?: boolean;
   previewMode?: GiftPreviewMode;
+  frameRef?: Ref<HTMLDivElement>;
 };
 
 const giftRenderers = {
@@ -37,6 +38,7 @@ export function GiftRenderer({
   compact = false,
   catalogCompact = false,
   previewMode = "live",
+  frameRef,
 }: GiftRendererProps) {
   const Renderer = giftRenderers[rendererType ?? product.renderer_type];
   return (
@@ -49,6 +51,7 @@ export function GiftRenderer({
       compact={compact}
       catalogCompact={catalogCompact}
       previewMode={previewMode}
+      frameRef={frameRef}
     />
   );
 }

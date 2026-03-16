@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type OverlayConfig = {
@@ -29,19 +30,24 @@ function getOverlayStyle(config: OverlayConfig = {}) {
   } as const;
 }
 
-export function RendererFrame({
-  assetUrl,
-  fallbackGradient,
-  className,
-  children,
-}: {
+export const RendererFrame = forwardRef<HTMLDivElement, {
   assetUrl?: string;
   fallbackGradient: string;
+  patternOverlay?: string;
+  colorTint?: string;
   className?: string;
   children: React.ReactNode;
-}) {
+}>(function RendererFrame({
+  assetUrl,
+  fallbackGradient,
+  patternOverlay,
+  colorTint,
+  className,
+  children,
+}, ref) {
   return (
     <div
+      ref={ref}
       className={cn("relative overflow-hidden rounded-[24px] border border-border/60 shadow-sm", className)}
       style={{
         backgroundImage: assetUrl ? `linear-gradient(rgba(15,23,42,0.18), rgba(15,23,42,0.28)), url(${assetUrl})` : fallbackGradient,
@@ -49,11 +55,22 @@ export function RendererFrame({
         backgroundPosition: "center",
       }}
     >
+      {/* Colour tint overlay — applied over template image */}
+      {colorTint ? (
+        <div className="absolute inset-0" style={{ background: colorTint, mixBlendMode: "color", opacity: 0.45 }} />
+      ) : null}
+      {/* Card style pattern overlay — always applied */}
+      {patternOverlay ? (
+        <div
+          className="absolute inset-0"
+          style={{ backgroundImage: patternOverlay, backgroundRepeat: "repeat", backgroundSize: "60px 60px", opacity: 0.6 }}
+        />
+      ) : null}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.24),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.18),transparent_30%)]" />
       {children}
     </div>
   );
-}
+});
 
 export function OverlayText({
   config,
