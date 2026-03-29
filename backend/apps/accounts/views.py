@@ -60,10 +60,30 @@ class ForgotPasswordRequestView(APIView):
     def post(self, request):
         serializer = ForgotPasswordRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        response_data = {"detail": "If an account exists for that email, a password reset link has been generated."}
+        response_data = {"detail": "If an account exists for that email, a password reset link has been sent."}
         user = User.objects.filter(email__iexact=serializer.validated_data["email"]).first()
-        if user and user.is_active and settings.DEBUG:
-            response_data.update(build_password_reset_credentials(user))
+        if user and user.is_active:
+            credentials = build_password_reset_credentials(user)
+            from urllib.parse import urlencode
+            from common.email import send_html_email
+            frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+            reset_url = f"{frontend_url}/reset-password?{urlencode(credentials)}"
+            send_html_email(
+                subject="Reset your Celnoia password",
+                to=user.email,
+                heading="Reset your password",
+                body_lines=[
+                    f"Hi {user.first_name or 'there'},",
+                    "We received a request to reset your Celnoia password. Click the button below to choose a new one.",
+                    "This link expires in 24 hours. If you didn't request a password reset, you can safely ignore this email.",
+                ],
+                cta_text="Reset Password",
+                cta_url=reset_url,
+                footer_note=f"Or copy and paste this link: {reset_url}",
+                fail_silently=True,
+            )
+            if settings.DEBUG:
+                response_data.update(credentials)
         return Response(response_data)
 
 

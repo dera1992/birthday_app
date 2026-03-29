@@ -1,10 +1,7 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.utils.formats import number_format
 
-
-def _from_email():
-    return getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@birthday.local")
+from common.email import send_html_email
 
 
 def _frontend_url():
@@ -32,21 +29,23 @@ def send_gift_purchase_invoice(purchase):
     )
     profile_url = f"{_frontend_url()}/birthday/{purchase.celebrant.birthday_profile.slug}"
 
-    send_mail(
-        subject=f"Your gift to {celebrant_name} — payment confirmed",
-        message=(
-            f"Hi {buyer_name},\n\n"
-            f"Thank you! Your gift has been sent to {celebrant_name}.\n\n"
-            f"  Gift:      {purchase.product.name}\n"
-            f"  To:        {celebrant_name}\n"
-            f"  Amount:    {_fmt(purchase.gross_amount, purchase.product.currency)}\n"
-            f"  Reference: {purchase.stripe_payment_intent_id}\n\n"
-            f"View the birthday page: {profile_url}\n\n"
-            "— Birthday Experiences"
-        ),
-        from_email=_from_email(),
-        recipient_list=[recipient_email],
-        fail_silently=True,
+    send_html_email(
+        subject=f"Gift sent to {celebrant_name} — payment confirmed",
+        to=recipient_email,
+        heading="Your gift has been sent! 🎁",
+        body_lines=[
+            f"Hi {buyer_name},",
+            f"Thank you! Your gift to <strong>{celebrant_name}</strong> has been sent successfully. "
+            "Here's a summary of your purchase.",
+        ],
+        cta_text="View Birthday Page",
+        cta_url=profile_url,
+        details={
+            "Gift": purchase.product.name,
+            "To": celebrant_name,
+            "Amount": _fmt(purchase.gross_amount, purchase.product.currency),
+            "Reference": purchase.stripe_payment_intent_id,
+        },
     )
 
 
@@ -67,21 +66,23 @@ def send_wishlist_contribution_invoice(contribution):
     )
     profile_url = f"{_frontend_url()}/birthday/{contribution.item.profile.slug}"
 
-    send_mail(
+    send_html_email(
         subject=f"Contribution confirmed — {item_name}",
-        message=(
-            f"Hi {contributor_name},\n\n"
-            f"Your contribution to {celebrant_name}'s wishlist has been received.\n\n"
-            f"  Item:      {item_name}\n"
-            f"  For:       {celebrant_name}\n"
-            f"  Amount:    {_fmt(contribution.amount, contribution.currency)}\n"
-            f"  Reference: {contribution.stripe_payment_intent_id}\n\n"
-            f"View the birthday page: {profile_url}\n\n"
-            "— Birthday Experiences"
-        ),
-        from_email=_from_email(),
-        recipient_list=[recipient_email],
-        fail_silently=True,
+        to=recipient_email,
+        heading="Your contribution has been received! 🎀",
+        body_lines=[
+            f"Hi {contributor_name},",
+            f"Thank you for contributing to <strong>{celebrant_name}'s</strong> wishlist. "
+            "Your generosity means a lot!",
+        ],
+        cta_text="View Birthday Page",
+        cta_url=profile_url,
+        details={
+            "Item": item_name,
+            "For": celebrant_name,
+            "Amount": _fmt(contribution.amount, contribution.currency),
+            "Reference": contribution.stripe_payment_intent_id,
+        },
     )
 
 
@@ -97,20 +98,22 @@ def send_event_registration_invoice(payment):
     event_url = f"{_frontend_url()}/events/{event.id}"
     event_date = event.start_at.strftime("%A, %d %B %Y at %H:%M") if event.start_at else "TBC"
 
-    send_mail(
+    send_html_email(
         subject=f"Payment confirmed — {event.title}",
-        message=(
-            f"Hi {attendee_name},\n\n"
-            f"Your payment for the following event has been confirmed.\n\n"
-            f"  Event:     {event.title}\n"
-            f"  Date:      {event_date}\n"
-            f"  Amount:    {_fmt(payment.amount, payment.currency)}\n"
-            f"  Reference: {payment.stripe_payment_intent_id}\n\n"
-            f"View event details: {event_url}\n\n"
-            "Funds are held securely until the event is confirmed.\n\n"
-            "— Birthday Experiences"
-        ),
-        from_email=_from_email(),
-        recipient_list=[recipient_email],
-        fail_silently=True,
+        to=recipient_email,
+        heading="You're all set! Payment confirmed 🎉",
+        body_lines=[
+            f"Hi {attendee_name},",
+            f"Your payment for <strong>{event.title}</strong> has been confirmed. "
+            "Your spot is secured — we look forward to seeing you there!",
+        ],
+        cta_text="View Event Details",
+        cta_url=event_url,
+        details={
+            "Event": event.title,
+            "Date": event_date,
+            "Amount": _fmt(payment.amount, payment.currency),
+            "Reference": payment.stripe_payment_intent_id,
+        },
+        footer_note="Funds are held securely and released to the host once the event is confirmed.",
     )

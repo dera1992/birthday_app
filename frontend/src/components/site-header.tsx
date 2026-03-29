@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarCheck, CalendarDays, CalendarHeart, ChevronDown, LayoutDashboard, LogOut, MapPin, Moon, PartyPopper, Search, Settings, Wallet } from "lucide-react";
+import { CalendarCheck, CalendarDays, CalendarHeart, ChevronDown, LayoutDashboard, LogOut, MapPin, Moon, Search, Settings, Wallet } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -191,11 +192,15 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-[rgba(249,247,245,0.88)] backdrop-blur-[20px] dark:border-white/10 dark:bg-[rgba(17,17,24,0.88)]">
       <div className="container flex h-[60px] items-center justify-between gap-6">
-        <Link href="/" className="flex items-center gap-[9px] text-[14px] font-bold tracking-[-0.02em]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-primary text-white shadow-[0_2px_8px_rgba(232,41,74,0.35)]">
-            <PartyPopper className="h-4 w-4" />
-          </span>
-          <span>Birthday Experiences</span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/celnoia-logo.png"
+            alt="Celnoia"
+            width={120}
+            height={36}
+            className="h-7 w-auto sm:h-8"
+            priority
+          />
         </Link>
 
         <form onSubmit={handleSearchSubmit} className="hidden flex-1 justify-center md:flex">

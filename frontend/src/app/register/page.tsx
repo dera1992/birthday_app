@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +49,10 @@ export default function RegisterPage() {
 
   return (
     <main className="container flex min-h-[calc(100vh-5rem)] items-center justify-center py-10">
+      <div className="w-full max-w-2xl">
+      <Link href="/" className="mb-6 flex justify-center">
+        <Image src="/celnoia-logo.png" alt="Celnoia" width={130} height={40} className="h-10 w-auto" />
+      </Link>
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle className="font-display text-3xl">Create your celebration account</CardTitle>
@@ -109,6 +114,7 @@ export default function RegisterPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </main>
   );
 }

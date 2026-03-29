@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -14,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ErrorNotice } from "@/components/ui/error-notice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLoginMutation, useForgotPasswordRequest } from "@/features/auth/api";
+import { useLoginMutation } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/auth-context";
 import { getErrorMessage } from "@/lib/api/errors";
 import { loginSchema } from "@/lib/validators/auth";
@@ -29,7 +30,6 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
   const loginMutation = useLoginMutation();
-  const forgotMutation = useForgotPasswordRequest();
   const { login } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,26 +45,12 @@ export default function LoginPage() {
     }
   }
 
-  async function handleForgotPassword() {
-    setSubmitError(null);
-    const email = form.getValues("email");
-    if (!email) {
-      toast.error("Enter your email first.");
-      return;
-    }
-    try {
-      const response = await forgotMutation.mutateAsync({ email });
-      toast.success(response.detail);
-      if (response.uid && response.token) {
-        toast.info(`Dev reset token ready. UID: ${response.uid}`);
-      }
-    } catch (error) {
-      setSubmitError(getErrorMessage(error, "Unable to start password reset."));
-    }
-  }
-
   return (
     <main className="container flex min-h-[calc(100vh-5rem)] items-center justify-center py-10">
+      <div className="w-full max-w-lg">
+      <Link href="/" className="mb-6 flex justify-center">
+        <Image src="/celnoia-logo.png" alt="Celnoia" width={130} height={40} className="h-10 w-auto" />
+      </Link>
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle className="font-display text-3xl">Welcome back</CardTitle>
@@ -96,8 +82,8 @@ export default function LoginPage() {
             <Button className="w-full" type="submit" disabled={loginMutation.isPending}>
               Sign in
             </Button>
-            <Button type="button" variant="ghost" className="w-full" onClick={handleForgotPassword} disabled={forgotMutation.isPending}>
-              Forgot password
+            <Button asChild variant="ghost" className="w-full">
+              <Link href="/forgot-password">Forgot password?</Link>
             </Button>
           </form>
           <p className="mt-6 text-sm text-muted-foreground">
@@ -108,6 +94,7 @@ export default function LoginPage() {
           </p>
         </CardContent>
       </Card>
+      </div>
     </main>
   );
 }

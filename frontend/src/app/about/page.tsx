@@ -91,7 +91,7 @@ export default function AboutPage() {
               or just want to say hello — reach out.
             </p>
             <p className="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400">
-              hello@birthdayexperiences.com
+              hello@celnoia.com
             </p>
           </section>
         </div>

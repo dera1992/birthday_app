@@ -1,6 +1,5 @@
 from urllib.parse import urlencode
 
-from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
@@ -11,6 +10,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import UserVerification
+from common.email import send_html_email
 
 
 def get_or_create_user_verification(user):
@@ -37,14 +37,19 @@ def send_verification_email(user):
     base_url = getattr(settings, "FRONTEND_EMAIL_VERIFY_URL", "http://localhost:3000/verify-email")
     query = urlencode(credentials)
     verification_url = f"{base_url}?{query}"
-    send_mail(
-        subject="Verify your email for Birthday Experiences",
-        message=(
-            "Verify your email to continue setting up your account.\n\n"
-            f"Open this link: {verification_url}"
-        ),
-        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@birthday.local"),
-        recipient_list=[user.email],
+
+    send_html_email(
+        subject="Verify your email — Celnoia",
+        to=user.email,
+        heading="Confirm your email address",
+        body_lines=[
+            f"Hi {user.first_name or 'there'},",
+            "Thanks for signing up! Please verify your email address to activate your Celnoia account.",
+            "This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.",
+        ],
+        cta_text="Verify Email Address",
+        cta_url=verification_url,
+        footer_note=f"Or copy and paste this link into your browser: {verification_url}",
         fail_silently=False,
     )
     return verification_url

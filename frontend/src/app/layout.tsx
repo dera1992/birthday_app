@@ -17,8 +17,9 @@ const sans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Birthday Experiences",
+  title: "Celnoia",
   description: "Premium birthday experiences, guest support, and payout-safe celebration planning.",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

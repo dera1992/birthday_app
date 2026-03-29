@@ -104,9 +104,8 @@ function LandingFooter() {
     <footer className="bg-[#150A06] px-6 py-12 text-white md:px-10 lg:px-12">
       <div className="mx-auto grid max-w-[1200px] gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div>
-          <Link href="/" className="inline-flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#FF5C47] to-[#FF3D6B] text-[11px] font-semibold text-white shadow-[0_4px_14px_rgba(255,92,71,0.4)]">CE</span>
-            <span className={`${display.className} text-[18px] font-bold`}>Birthday Experiences</span>
+          <Link href="/" className="inline-flex items-center">
+            <img src="/celnoia-logo.png" alt="Celnoia" className="h-9 w-auto" />
           </Link>
           <p className={`${bodyFont.className} mt-4 max-w-[240px] text-[13px] leading-6 text-white/40`}>
             Curated birthday experiences, protected payments, and warm guest support.
@@ -126,7 +125,7 @@ function LandingFooter() {
         ))}
       </div>
       <div className={`${bodyFont.className} mx-auto mt-8 flex max-w-[1200px] flex-col gap-2 text-[12px] text-white/25 md:flex-row md:items-center md:justify-between`}>
-        <p>(c) 2026 Birthday Experiences. All rights reserved.</p>
+        <p>(c) 2026 Celnoia. All rights reserved.</p>
         <p>Designed for warm celebrations with rigorous operations.</p>
       </div>
     </footer>
