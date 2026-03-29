@@ -105,7 +105,7 @@ function LandingFooter() {
       <div className="mx-auto grid max-w-[1200px] gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div>
           <Link href="/" className="inline-flex items-center">
-            <img src="/celnoia-logo.png" alt="Celnoia" className="h-9 w-auto" />
+            <img src="/celnoia-logo.png" alt="Celnoia" className="h-6 w-auto sm:h-7 md:h-9" />
           </Link>
           <p className={`${bodyFont.className} mt-4 max-w-[240px] text-[13px] leading-6 text-white/40`}>
             Curated birthday experiences, protected payments, and warm guest support.

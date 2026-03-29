@@ -198,7 +198,7 @@ export function SiteHeader() {
             alt="Celnoia"
             width={120}
             height={36}
-            className="h-7 w-auto sm:h-8"
+            className="h-6 w-auto sm:h-7 md:h-8"
             priority
           />
         </Link>

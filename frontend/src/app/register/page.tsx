@@ -51,7 +51,7 @@ export default function RegisterPage() {
     <main className="container flex min-h-[calc(100vh-5rem)] items-center justify-center py-10">
       <div className="w-full max-w-2xl">
       <Link href="/" className="mb-6 flex justify-center">
-        <Image src="/celnoia-logo.png" alt="Celnoia" width={130} height={40} className="h-10 w-auto" />
+        <Image src="/celnoia-logo.png" alt="Celnoia" width={130} height={40} className="h-7 w-auto sm:h-8 md:h-10" />
       </Link>
       <Card className="w-full max-w-2xl">
         <CardHeader>
