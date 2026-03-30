@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { Check } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description: "Simple, transparent pricing for birthday experiences on Celnoia. No hidden fees.",
+  robots: { index: true, follow: true },
+};
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

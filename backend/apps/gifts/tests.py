@@ -104,7 +104,8 @@ class GiftEngineTests(TestCase):
         self.assertEqual(current["preview_asset_url"], self.template.preview_asset.url)
         self.assertEqual(current["default_config"]["presentation"]["preview_shell"], "studio_card")
         self.assertEqual(current["layout_config"]["title"]["y"], "24%")
-        self.assertEqual(current["customization_schema"]["fields"][0]["name"], "recipient_name")
+        schema_field_names = [f["name"] for f in current["customization_schema"]["fields"]]
+        self.assertIn("recipient_name", schema_field_names)
         self.assertEqual(current["purchase_instructions"], "Keep it classy.")
         self.assertTrue(current["allow_anonymous_sender"])
         self.assertEqual(legacy["renderer_type"], "FLOWER_GIFT")

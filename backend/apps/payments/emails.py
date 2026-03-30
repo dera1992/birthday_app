@@ -21,7 +21,7 @@ def send_gift_purchase_invoice(purchase):
         return
 
     buyer_name = purchase.from_name or (
-        f"{purchase.buyer.first_name}".strip() if purchase.buyer else "there"
+        f"{purchase.buyer_user.first_name}".strip() if purchase.buyer_user else "there"
     )
     celebrant_name = (
         f"{purchase.celebrant.first_name} {purchase.celebrant.last_name}".strip()

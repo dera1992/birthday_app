@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.contrib.auth import authenticate
@@ -39,14 +41,18 @@ class AccountApiTests(TestCase):
         self.assertIn("access", response.json())
         self.assertIn("refresh", response.json())
 
-    def test_request_verify_otp_and_patch_me(self):
+    @patch("apps.accounts.services.send_sms")
+    @patch("common.email.EmailMultiAlternatives.send")
+    def test_request_verify_otp_and_patch_me(self, mock_email_send, mock_sms):
         self.client.force_authenticate(user=self.user)
 
-        otp_response = self.client.post(
-            "/api/auth/request-otp",
-            {"phone_number": "+447700900123"},
-            format="json",
-        )
+        with patch("apps.accounts.services.random.SystemRandom.randint", return_value=123456):
+            otp_response = self.client.post(
+                "/api/auth/request-otp",
+                {"phone_number": "+447700900123"},
+                format="json",
+            )
+
         verify_response = self.client.post(
             "/api/auth/verify-otp",
             {"phone_number": "+447700900123", "code": "123456"},
@@ -57,7 +63,15 @@ class AccountApiTests(TestCase):
             {"first_name": "Updated"},
             format="json",
         )
-        verify_email = self.client.post("/api/auth/verify-email", format="json")
+
+        # /api/auth/verify-email only sends the email; confirm via the confirm endpoint
+        from apps.accounts.services import build_email_verification_credentials
+        creds = build_email_verification_credentials(self.user)
+        verify_email = self.client.post(
+            "/api/auth/verify-email/confirm",
+            {"uid": creds["uid"], "token": creds["token"]},
+            format="json",
+        )
 
         self.user.refresh_from_db()
         self.assertEqual(otp_response.status_code, 200)

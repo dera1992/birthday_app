@@ -461,10 +461,7 @@ class WishlistExtensionTests(TestCase):
 
     def test_remaining_amount_and_is_fully_funded_serializer(self):
         item = self._make_item(allow_contributions=True, target_amount="60.00", amount_raised="40.00", currency="GBP")
-        data = self.client.get(f"/api/birthday-profile/{self.profile.slug}/wishlist-items").json()
-        # owner list includes all items
-        match = next((d for d in data if d["id"] == item.id), None)
-        # wishlist-items create returns items; check via the profile detail endpoint
+        # check via the profile detail endpoint
         detail = self.client.get(f"/api/birthday-profile/{self.profile.slug}").json()
         wl = next((d for d in detail["wishlist_items"] if d["id"] == item.id), None)
         self.assertIsNotNone(wl)

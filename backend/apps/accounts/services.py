@@ -1,5 +1,7 @@
+import random
 from urllib.parse import urlencode
 
+import redis
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
@@ -11,6 +13,26 @@ from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import UserVerification
 from common.email import send_html_email
+from common.sms import send_sms
+
+_OTP_TTL = 600  # 10 minutes
+
+
+def _redis_client():
+    return redis.from_url(getattr(settings, "REDIS_URL", "redis://redis:6379/0"))
+
+
+def _otp_key(phone_number: str) -> str:
+    return f"otp:{phone_number}"
+
+
+def generate_and_send_otp(phone_number: str) -> str:
+    code = f"{random.SystemRandom().randint(0, 999999):06d}"
+    r = _redis_client()
+    r.setex(_otp_key(phone_number), _OTP_TTL, code)
+    message = f"Your Celnoia verification code is: {code}. Valid for 10 minutes."
+    send_sms(phone_number, message)
+    return code
 
 
 def get_or_create_user_verification(user):
@@ -73,10 +95,26 @@ def store_phone_number(user, phone_number: str):
 
 
 def verify_phone_otp(user, code: str, phone_number: str = ""):
-    if code != settings.DEV_OTP_CODE:
+    target_phone = phone_number or get_or_create_user_verification(user).phone_number
+    if not target_phone:
+        raise ValidationError("No phone number on record.")
+
+    r = _redis_client()
+    stored = r.get(_otp_key(target_phone))
+
+    # Fall back to DEV_OTP_CODE in debug mode for testing
+    if stored is None:
+        if getattr(settings, "DEBUG", False) and code == settings.DEV_OTP_CODE:
+            stored = code.encode()
+        else:
+            raise ValidationError("OTP has expired. Please request a new one.")
+
+    if code != stored.decode():
         raise ValidationError("Invalid OTP code.")
+
+    r.delete(_otp_key(target_phone))
     verification = get_or_create_user_verification(user)
-    verification.mark_phone_verified(phone_number or verification.phone_number)
+    verification.mark_phone_verified(target_phone)
     return verification
 
 

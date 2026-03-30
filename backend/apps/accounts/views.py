@@ -16,7 +16,7 @@ from apps.accounts.serializers import (
     MeSerializer,
     RegisterSerializer,
 )
-from apps.accounts.services import build_password_reset_credentials, store_phone_number, verify_email, verify_phone_otp
+from apps.accounts.services import build_password_reset_credentials, generate_and_send_otp, store_phone_number, verify_email, verify_phone_otp
 from apps.accounts.services import confirm_email_verification, send_verification_email
 from common.schema import detail_response_serializer
 
@@ -158,10 +158,10 @@ class RequestOTPView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        store_phone_number(request.user, request.data.get("phone_number"))
-        from django.conf import settings
-
-        return Response({"detail": "OTP requested.", "dev_code": settings.DEV_OTP_CODE if settings.DEBUG else None})
+        phone_number = request.data.get("phone_number")
+        store_phone_number(request.user, phone_number)
+        generate_and_send_otp(phone_number)
+        return Response({"detail": "OTP sent to your phone number."})
 
 
 @extend_schema_view(
